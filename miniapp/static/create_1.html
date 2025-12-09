@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Мини-приложение — Розыгрыш</title>
+  <style>
+    :root{
+      --bg-page: #000000;
+      --phone-bg: #2a2a2a;
+      --panel-bg: #3a3a3a;
+      --muted: #cccccc;
+      --accent: #ffffff;
+      --gap: 12px;
+      --phone-max-w: 360px;
+      --phone-min-h: 640px;
+      --phone-radius: 20px;
+      --info-radius: 12px;
+      --safe-fonts: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    }
+
+    /* Базовые стили */
+    html, body {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+      background: var(--bg-page);
+      font-family: var(--safe-fonts);
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      color: var(--accent);
+      box-sizing: border-box;
+    }
+    *, *::before, *::after { box-sizing: inherit; }
+
+    .page-wrap{
+      min-height:100vh;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding: 2px;
+    }
+
+  .phone-screen{
+      width:100%;
+      max-width: var(--phone-max-w);
+      min-height:  max-height: calc(100vh - 16px);
+      max-height: max-height: calc(100vh - 4px);;
+      background: black; /*var(--phone-bg) ЦВЕТ ЗАДНЕГО БЛОКА ЦВЕТ ЗАДНЕГО БЛОКА ЦВЕТ ЗАДНЕГО БЛОКА ЦВЕТ ЗАДНЕГО БЛОКАЦВЕТ ЗАДНЕГО БЛОКАЦВЕТ ЗАДНЕГО БЛОКАЦВЕТ ЗАДНЕГО БЛОКА*/
+      border-radius: var(--phone-radius);
+      padding: 4px;
+      display:flex;
+      flex-direction:column;
+      gap: 12px;
+      box-shadow: 0 6px 30px rgba(0,0,0,0.6);
+      margin: 0 auto;
+      overflow-y: auto;  /* ← делаем прокрутку по вертикали */
+      -webkit-overflow-scrolling: touch; /* плавный скролл на iOS */
+    }
+
+/* Верхняя панель */
+/* Верхняя панель */
+.top-panel{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:10px;
+  text-align:center;
+  flex-warp: warp;
+}
+.top-panel .title{
+  font-size: 50px;
+  line-height: 1.1;
+  font-weight:700;
+  margin:0;
+  color: var(--accent);
+  white-space: normal;
+  word-break: break-word;
+}
+.top-panel .icon{
+  width:150px;
+  height:150px;
+  border-radius:12px;
+  object-fit:cover;
+  flex: 0 0 auto;
+}
+
+    /* Прокручиваемая зона с контентом: занимает всё оставшееся место */
+    .content{
+      flex: 1 1 auto;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      display:flex;
+      flex-direction:column;
+      gap:12px;
+      padding-right:6px; /* небольшой отступ чтобы скролл не наслаивался на контент */
+    }
+
+    /* Центральный информационный блок */
+    .info-block{
+      background: var(--panel-bg);
+      border-radius: 5px;
+      padding: 14px;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      gap:8px;
+
+      width: 90%;
+      min-height: 150px;      /* немного увеличили высоту */
+      max-width: 300px;       /* можно ограничить максимальную ширину */
+      margin: 0 auto;
+    }
+    .info-block p{
+      margin:0;
+      font-size: 16px;
+      line-height:1.3;
+      color: white;
+      text-align:center;
+      opacity:0.95;
+      word-break: break-word;
+    }
+    .info-block p.meta{
+      font-size:15px;
+      color: white;
+      opacity:1.1;
+    }
+
+    .divider{
+      height:1px;
+      background: rgba(255,255,255,0.04);
+      border-radius:1px;
+      margin:6px 0;
+      width:100%;
+    }
+
+    /* Блок статусов: вертикальный список */
+    .status-row{
+      display:flex;
+      flex-direction:column;   /* строки одна под другой */
+      gap:10px;
+      width:100%;
+    }
+
+    .status-item{
+      display:flex;
+      align-items:flex-start;  /* иконка выровнена к верху многострочного текста */
+      gap:10px;
+      margin-top: 15px;
+      margin-bottom 10px;
+      width:100%;
+    }
+
+    .status-icon{
+      width:28px;
+      height:28px;
+      border-radius:6px;
+      object-fit:cover;
+      flex: 0 0 28px;
+      margin-top: 4px;
+
+    }
+
+    .status-text{
+      font-size:16px;
+      color: var(--accent);
+      line-height:1.6;
+      word-break: break-word;
+      white-space: normal;
+    }
+
+    /* Блок победителя — тот же стиль, но с небольшим акцентом */
+    .winner-block{
+      background: var(--panel-bg);
+      border-radius: var(--info-radius);
+      padding: 12px;
+      display:flex;
+      flex-direction:column;
+      gap:8px;
+      width: 90%;
+      min-height: 100px;      /* немного увеличили высоту */
+      max-width: 300px;       /* можно ограничить максимальную ширину */
+      margin: 0 auto;
+
+
+    }
+    .winner-block .winner-title{
+      font-size:16px;
+      font-weight:700;
+      color: var(--accent);
+      text-align:center;
+    }
+    .winner-block .winner-body{
+      font-size:14px;
+      color: var(--muted);
+      text-align:center;
+      line-height:1.3;
+      word-break: break-word;
+    }
+
+    /* Адаптив */
+    @media (max-width:420px){
+      .top-panel .icon{ width:120px; height:120px; }
+      .top-panel .title{ font-size:36px; }
+      .info-block{ padding:12px; }
+      .status-text{ font-size:16px; }
+    }
+    @media (max-width:320px){
+      .status-text{ font-size:13px; }
+      .winner-block .winner-body{ font-size:13px; }
+    }
+
+    /* Скрываем скроллбар в WebKit, при необходимости */
+    .content::-webkit-scrollbar{ width:6px; }
+    .content::-webkit-scrollbar-thumb{ background: rgba(255,255,255,0.06); border-radius:6px; }
+  </style>
+</head>
+<body>
+  <div class="page-wrap">
+    <div class="phone-screen" role="application" aria-label="Мини-приложение розыгрыша">
+
+      <!-- Верхняя панель -->
+      <header class="top-panel" role="banner">
+        <h1 class="title">Розыгрыш<br>завершен!</h1>
+        <img class="icon" src="/static/images/logo.png" alt="Иконка">
+      </header>
+
+      <!-- Прокручиваемая зона с основным контентом -->
+      <div class="content">
+
+        <!-- Центральный информационный блок -->
+        <section class="info-block" aria-labelledby="info-heading">
+          <h2 id="info-heading" style="position:absolute;left:-9999px;top:auto;width:1px;height:1px;overflow:hidden;">Информация о розыгрыше</h2>
+
+          <p class="meta">Участников: <strong>150</strong></p>
+          <p class="meta">Всего билетов: <strong>150</strong></p>
+          <p class="meta">Призовых мест: <strong>1</strong></p>
+
+          <div class="divider" aria-hidden="true"></div>
+
+          <p class="meta">Дата окончания: <strong>13.11.2025, 18:00 МСК</strong></p>
+        </section>
+
+        <!-- Статусные строки (вертикально) -->
+        <div class="status-row" role="status" aria-live="polite">
+          <div class="status-item">
+            <img class="status-icon" src="/static/images/img1.png" alt="">
+            <div class="status-text">Загружено участников — 150, билетов — 150. Начинаем розыгрыш!</div>
+          </div>
+
+          <div class="status-item">
+            <img class="status-icon" src="/static/images/img1.png" alt="">
+            <div class="status-text">Выбираем победителя на 1 место...</div>
+          </div>
+
+          <div class="status-item">
+            <img class="status-icon" src="/static/images/img1.png" alt="">
+            <div class="status-text">Выбран билет: RMKCGE — (Artem6765) Fhntv Fhifdf</div>
+          </div>
+
+          <div class="status-item">
+            <img class="status-icon" src="/static/images/img1.png" alt="">
+            <div class="status-text">Проверяем подписку на канал ТАЧКИ… подписан</div>
+          </div>
+
+          <div class="status-item">
+            <img class="status-icon" src="/static/images/img1.png" alt="">
+            <div class="status-text">Участник с билетом RMKCGE — (Artem6765) Артем побеждает и занимает 1 место в розыгрыше!</div>
+          </div>
+        </div>
+
+        <!-- Блок победителя в самом низу -->
+        <section class="winner-block" aria-labelledby="winner-heading">
+          <h2 id="winner-heading" style="position:absolute;left:-9999px;top:auto;width:1px;height:1px;overflow:hidden;">Победитель розыгрыша</h2>
+
+          <div class="winner-title">Победитель розыгрыша 🏆</div>
+
+          <div class="winner-body">
+            <strong>Артем</strong><br>
+            @Artrm6765<br>
+            ID 876534856486<br>
+            Билет: <strong>RMKCGE</strong>
+          </div>
+        </section>
+
+      </div> <!-- .content -->
+    </div> <!-- .phone-screen -->
+  </div> <!-- .page-wrap -->
+</body>
+</html>

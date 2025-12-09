@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>{{ raffle_name }} — Проверка подписок</title>
+<style>
+  :root{
+    --bg-page: #000000;
+    --phone-bg: #000000;
+    --card-bg: #222;
+    --panel-bg: #2f2f2f;
+    --muted: #bdbdbd;
+    --text: #ffffff;
+    --accent: #f5b21a;
+    --accent-dark: #d99c13;
+    --success: #2fb86f;
+    --danger: #ff9a2e;
+    --gap: 14px;
+    --phone-max-w: 420px;
+    --phone-pad: 12px;
+    --radius-large: 14px;
+    --radius-medium: 10px;
+    --safe-fonts: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  }
+
+  html,body{
+    height:100%;
+    margin:0;
+    padding:0;
+    background: var(--bg-page);
+    font-family: var(--safe-fonts);
+    color: var(--text);
+    -webkit-font-smoothing:antialiased;
+    -moz-osx-font-smoothing:grayscale;
+  }
+
+  .page-wrap{
+    min-height:100vh;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:8px;
+  }
+
+  .phone-screen{
+    width:100%;
+    max-width: var(--phone-max-w);
+    background: var(--phone-bg);
+    border-radius: 18px;
+    padding: var(--phone-pad);
+    box-shadow: 0 8px 40px rgba(0,0,0,0.6);
+    box-sizing:border-box;
+  }
+
+  .header{
+    display:flex;
+    align-items:center;
+    justify-content: center;
+    gap:12px;
+    margin-top:6px;
+    margin-bottom:30px;
+    text-align: center;
+  }
+
+  .header .hero-icon{
+    width:65px;
+    height:65px;
+    flex:0 0 64px;
+    border-radius:14px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.6);
+    background: transparent;
+  }
+
+  .header .hero-icon img{
+    width: 150%;
+    height: 150%;
+    object-fit: contain;
+    display:block;
+    border-radius:10px;
+  }
+
+  .header .title-wrap{
+    flex:1 1 auto;
+    position:relative;
+    text-align: center;
+  }
+
+  .title{
+    font-size:17px;
+    line-height:1.2;
+    margin:0;
+    color:var(--text);
+    font-weight:400;
+    text-align: center;
+  }
+
+  .timer-wrap{
+    display:flex;
+    justify-content:center;
+    margin:0 -4px 20px -4px;
+  }
+
+  .timer{
+    background:#2e2e2e;
+    padding:15px 0px;
+    border-radius:20px;
+    min-width:220px;
+    text-align:center;
+    box-shadow:0 6px 18px rgba(0,0,0,0.6);
+    border:0.5px solid #dbdbdb;
+  }
+
+  .timer .time {
+    font-family: 'Roboto Mono', monospace;
+    font-weight:700;
+    color: #ffbf2e;
+    font-size:18px;
+  }
+
+  .timer .caption {
+    display:block;
+    margin-top:6px;
+    font-size:13px;
+    color: #9aa0a6;
+  }
+
+  /* Стили для информации о розыгрыше */
+  .raffle-info {
+    background: var(--panel-bg);
+    padding: 20px;
+    border-radius: var(--radius-medium);
+    margin-bottom: 20px;
+  }
+
+  .info-item {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 10px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #444;
+  }
+
+  .info-label {
+    color: var(--muted);
+    font-size: 14px;
+  }
+
+  .info-value {
+    color: var(--text);
+    font-weight: bold;
+    font-size: 14px;
+  }
+
+  /* Стили для списка каналов */
+  .channels-section {
+    margin-top: 20px;
+  }
+
+  .channel-item {
+    background: var(--card-bg);
+    padding: 15px;
+    border-radius: var(--radius-medium);
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .channel-status {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+  }
+
+  .channel-status.subscribed {
+    background: var(--success);
+    color: white;
+  }
+
+  .channel-status.not-subscribed {
+    background: var(--danger);
+    color: white;
+  }
+
+  .channel-info {
+    flex: 1;
+  }
+
+  .channel-name {
+    font-weight: bold;
+    margin-bottom: 4px;
+  }
+
+  .channel-link {
+    color: var(--accent);
+    font-size: 13px;
+    text-decoration: none;
+  }
+
+  .channel-link:hover {
+    text-decoration: underline;
+  }
+
+  /* Стили для кнопок */
+  .btn {
+    width: 100%;
+    padding: 16px;
+    border: none;
+    border-radius: var(--radius-medium);
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-align: center;
+    margin-top: 10px;
+  }
+
+  .btn-primary {
+    background: var(--accent);
+    color: #000;
+  }
+
+  .btn-primary:hover {
+    background: var(--accent-dark);
+    transform: translateY(-2px);
+  }
+
+  .btn-primary:disabled {
+    background: #666;
+    cursor: not-allowed;
+    transform: none;
+  }
+
+  .btn-secondary {
+    background: var(--panel-bg);
+    color: var(--text);
+    border: 1px solid #444;
+  }
+
+  /* Уведомления */
+  .notification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    padding: 15px 20px;
+    border-radius: 10px;
+    color: white;
+    font-weight: bold;
+    z-index: 1000;
+    animation: slideIn 0.3s ease;
+    max-width: 300px;
+  }
+
+  .notification.success {
+    background: var(--success);
+  }
+
+  .notification.error {
+    background: var(--danger);
+  }
+
+  @keyframes slideIn {
+    from { transform: translateX(100%); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+  }
+
+  @keyframes slideOut {
+    from { transform: translateX(0); opacity: 1; }
+    to { transform: translateX(100%); opacity: 0; }
+  }
+
+  /* Адаптивные правки */
+  @media (max-width:420px){
+    .header .hero-icon{ width:56px; height:56px; flex:0 0 56px; }
+    .title{ font-size:18px; }
+    .timer{ min-width:150px; padding:10px 16px; border-radius:12px; }
+    .time{ font-size:16px; }
+  }
+
+  .hidden {
+    display: none !important;
+  }
+</style>
+</head>
+<body>
+  <div class="page-wrap">
+    <div class="phone-screen" role="application" aria-label="Проверка подписок">
+
+      <!-- header -->
+      <div class="header">
+        <div class="hero-icon" aria-hidden="true">
+          <img src="/static/images/!!!.png" alt="Пригласить" id="heroImage">
+        </div>
+
+        <div class="title-wrap">
+          <div class="title"><span class="title-underline">{{ description }}</span></div>
+        </div>
+      </div>
+
+      <!-- timer -->
+      <div class="timer-wrap">
+        <div class="timer" role="timer" aria-live="polite" aria-atomic="true">
+          <div class="time" id="timeValue">{{ time_left_formatted }}</div>
+          <span class="caption">До окончания розыгрыша</span>
+        </div>
+      </div>
+
+      <!-- Информация о розыгрыше -->
+      <div class="raffle-info">
+        <div class="info-item">
+          <span class="info-label">🎁 Розыгрыш:</span>
+          <span class="info-value">{{ raffle_name }}</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">🏆 Победителей:</span>
+          <span class="info-value">{{ winners_count }}</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">📅 Завершится:</span>
+          <span class="info-value">{{ end_date_formatted }}</span>
+        </div>
+        {% if channels_count > 0 %}
+        <div class="info-item">
+          <span class="info-label">📢 Каналов для подписки:</span>
+          <span class="info-value">{{ channels_count }}</span>
+        </div>
+        {% endif %}
+      </div>
+
+      <!-- Список каналов для подписки -->
+      {% if channels_count > 0 %}
+      <div class="channels-section">
+        <h3 style="margin-top: 0; margin-bottom: 15px; color: var(--accent);">Каналы для подписки:</h3>
+        <div id="channelsList">
+          {% for channel in channels %}
+          <div class="channel-item" data-channel="{{ channel }}">
+            <div class="channel-status not-subscribed" id="status_{{ loop.index }}">❌</div>
+            <div class="channel-info">
+              <div class="channel-name">Канал {{ channel }}</div>
+              <a href="https://t.me/{{ channel.replace('@', '') }}"
+                 target="_blank"
+                 class="channel-link">
+                Перейти → @{{ channel.replace('@', '') }}
+              </a>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- Кнопки действий -->
+      <div id="actionsSection">
+        {% if channels_count > 0 %}
+        <button class="btn btn-secondary" id="checkSubscriptionsBtn">
+          🔄 Проверить подписки
+        </button>
+        {% endif %}
+
+        <button class="btn btn-primary" id="participateBtn">
+          🎁 Участвовать в розыгрыше
+        </button>
+      </div>
+
+      <!-- Контейнер для результатов -->
+      <div id="resultContainer" class="hidden" style="margin-top: 20px; padding: 20px; background: var(--panel-bg); border-radius: var(--radius-medium);">
+        <div id="resultContent"></div>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    // Глобальные переменные
+    const raffleId = {{ raffle_id }};
+    const totalSeconds = {{ total_seconds }};
+    const channelsCount = {{ channels_count }};
+
+    // Инициализация Telegram Web App
+    let tg = null;
+    if (window.Telegram && window.Telegram.WebApp) {
+      tg = window.Telegram.WebApp;
+      tg.expand();
+      tg.ready();
+      console.log('✅ Telegram Web App инициализирован');
+
+      // Получаем данные пользователя
+      const user = tg.initDataUnsafe.user;
+      if (user) {
+        console.log('👤 Пользователь:', user);
+        document.getElementById('heroImage').src = user.photo_url || '/static/images/!!!.png';
+      }
+    }
+
+    // Таймер обратного отсчета
+    let remainingSeconds = totalSeconds;
+    const timeElement = document.getElementById('timeValue');
+    const participateBtn = document.getElementById('participateBtn');
+
+    function updateTimer() {
+      if (remainingSeconds <= 0) {
+        timeElement.textContent = "00:00:00";
+        timeElement.style.color = "#ff6b6b";
+
+        if (participateBtn) {
+          participateBtn.disabled = true;
+          participateBtn.textContent = "⌛ Время вышло";
+        }
+        return;
+      }
+
+      remainingSeconds--;
+
+      const hours = Math.floor(remainingSeconds / 3600);
+      const minutes = Math.floor((remainingSeconds % 3600) / 60);
+      const seconds = remainingSeconds % 60;
+
+      timeElement.textContent =
+        `${hours.toString().padStart(2, '0')}:` +
+        `${minutes.toString().padStart(2, '0')}:` +
+        `${seconds.toString().padStart(2, '0')}`;
+    }
+
+    // Запускаем таймер
+    if (remainingSeconds > 0) {
+      setInterval(updateTimer, 1000);
+    } else {
+      updateTimer(); // Устанавливаем 00:00:00 если время вышло
+    }
+
+    // Проверка подписок
+    document.getElementById('checkSubscriptionsBtn')?.addEventListener('click', async function() {
+      const btn = this;
+      const originalText = btn.textContent;
+      btn.disabled = true;
+      btn.textContent = '🔍 Проверяю...';
+
+      try {
+        const userData = tg?.initDataUnsafe?.user || {};
+
+        const response = await fetch('/api/check-subscription', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Telegram-Init-Data': tg?.initData || ''
+          },
+          body: JSON.stringify({
+            raffle_id: raffleId,
+            user_id: userData.id || 0
+          })
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+          // Обновляем статусы каналов
+          if (data.channels && data.channels.length > 0) {
+            data.channels.forEach(channel => {
+              const statusElement = document.querySelector(`[data-channel="${channel.channel}"] .channel-status`);
+              if (statusElement) {
+                if (channel.subscribed) {
+                  statusElement.className = 'channel-status subscribed';
+                  statusElement.textContent = '✅';
+                } else {
+                  statusElement.className = 'channel-status not-subscribed';
+                  statusElement.textContent = '❌';
+                }
+              }
+            });
+          }
+
+          if (data.all_subscribed) {
+            showNotification('✅ Вы подписаны на все каналы!', 'success');
+          } else {
+            showNotification('❌ Подпишитесь на отмеченные каналы', 'error');
+          }
+        } else {
+          showNotification(data.message || 'Ошибка проверки', 'error');
+        }
+      } catch (error) {
+        showNotification('❌ Ошибка соединения', 'error');
+        console.error('Ошибка проверки подписок:', error);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = originalText;
+      }
+    });
+
+    // Участие в розыгрыше
+    document.getElementById('participateBtn').addEventListener('click', async function() {
+      const btn = this;
+      const originalText = btn.textContent;
+      btn.disabled = true;
+      btn.textContent = '⏳ Регистрируем...';
+
+      try {
+        const userData = tg?.initDataUnsafe?.user || {};
+
+        const response = await fetch('/api/participate', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Telegram-Init-Data': tg?.initData || ''
+          },
+          body: JSON.stringify({
+            raffle_id: raffleId,
+            user_data: userData
+          })
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+          btn.textContent = '✅ Вы участвуете!';
+          btn.style.background = '#2fb86f';
+          btn.disabled = true;
+
+          showNotification(data.message || '🎉 Вы успешно зарегистрированы!', 'success');
+
+          // Показываем дополнительную информацию
+          document.getElementById('resultContainer').classList.remove('hidden');
+          document.getElementById('resultContent').innerHTML = `
+            <h3 style="margin-top: 0; color: #2fb86f;">✅ Регистрация успешна!</h3>
+            <p>Ваш номер участника: <strong>#${data.participant_number || '1'}</strong></p>
+            <p>Розыгрыш: <strong>{{ raffle_name }}</strong></p>
+            <p>Удачи! 🍀</p>
+          `;
+
+          // Прокручиваем к результатам
+          document.getElementById('resultContainer').scrollIntoView({ behavior: 'smooth' });
+
+        } else if (data.requires_subscription) {
+          btn.textContent = originalText;
+          btn.disabled = false;
+          showNotification('❌ Требуется подписка на все каналы', 'error');
+
+          // Показываем список каналов
+          if (data.channels && data.channels.length > 0) {
+            document.getElementById('resultContainer').classList.remove('hidden');
+            let channelsHtml = '<h3 style="color: #ff9a2e;">Подпишитесь на эти каналы:</h3>';
+            data.channels.forEach(channel => {
+              channelsHtml += `
+                <div style="margin: 10px 0; padding: 10px; background: #222; border-radius: 8px;">
+                  <strong>${channel}</strong><br>
+                  <a href="https://t.me/${channel.replace('@', '')}" target="_blank" style="color: #f5b21a;">
+                    Перейти → @${channel.replace('@', '')}
+                  </a>
+                </div>
+              `;
+            });
+            document.getElementById('resultContent').innerHTML = channelsHtml;
+          }
+
+        } else if (data.already_participating) {
+          btn.textContent = '✅ Вы уже участвуете';
+          btn.style.background = '#2fb86f';
+          btn.disabled = true;
+          showNotification('ℹ️ Вы уже зарегистрированы в этом розыгрыше', 'success');
+
+        } else {
+          btn.textContent = originalText;
+          btn.disabled = false;
+          showNotification(data.message || '❌ Ошибка регистрации', 'error');
+        }
+      } catch (error) {
+        btn.textContent = originalText;
+        btn.disabled = false;
+        showNotification('❌ Ошибка соединения с сервером', 'error');
+        console.error('Ошибка регистрации:', error);
+      }
+    });
+
+    // Функция показа уведомлений
+    function showNotification(message, type = 'info') {
+      // Удаляем старое уведомление
+      const oldNotification = document.querySelector('.notification');
+      if (oldNotification) {
+        oldNotification.style.animation = 'slideOut 0.3s ease';
+        setTimeout(() => oldNotification.remove(), 300);
+      }
+
+      // Создаем новое уведомление
+      const notification = document.createElement('div');
+      notification.className = `notification ${type}`;
+      notification.textContent = message;
+
+      document.body.appendChild(notification);
+
+      // Удаляем через 3 секунды
+      setTimeout(() => {
+        notification.style.animation = 'slideOut 0.3s ease';
+        setTimeout(() => notification.remove(), 300);
+      }, 3000);
+    }
+
+    // Автоматическая проверка подписок при загрузке (если есть каналы)
+    if (channelsCount > 0 && tg?.initData) {
+      setTimeout(() => {
+        document.getElementById('checkSubscriptionsBtn')?.click();
+      }, 1000);
+    }
+  </script>
+</body>
+</html>

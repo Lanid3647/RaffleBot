@@ -1,0 +1,473 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
+  <title>Розыгрыш — Мини-приложение (Telegram Web App)</title>
+
+  <!-- Шрифт: Inter (можно заменить) -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    /* =========================
+       Переменные темы — подгоняйте под макет
+       ========================= */
+    :root{
+      --bg: #070707;            /* основной фон (чёрный) */
+      --panel: #222222;         /* фон карточек/панелей */
+      --muted: #9aa0a6;         /* вспомогательный текст */
+      --text: #ffffff;          /* основной текст */
+      --accent: #FFBF2E;        /* жёлтый акцент (кнопки/бордеры) */
+      --accent-strong: #F7B500; /* насыщенный жёлтый */
+      --card-radius: 14px;
+      --gap: 16px;
+      --shadow: 0 8px 28px rgba(0,0,0,0.6);
+    }
+
+    /* Сбросы */
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      font-family:"Inter",system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial;
+      background:var(--bg);
+      color:var(--text);
+      -webkit-font-smoothing:antialiased;
+      -moz-osx-font-smoothing:grayscale;
+      padding:env(safe-area-inset-top) 16px env(safe-area-inset-bottom);
+      -webkit-touch-callout:none;
+    }
+
+    /* Главный контейнер (мобильный-first) */
+    .app{
+      max-width:420px;
+      margin:0 auto;
+      padding:20px 0;
+    }
+/* Header / Hero */
+/* Header / Hero */
+header.hero {
+  background: linear-gradient(180deg, rgba(255,255,255,0.02), transparent);
+  padding: 22px 15px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center; /* Логотип и текст на одной линии */
+  gap: 0px; /* Расстояние между логотипом и текстом */
+  margin-bottom: -4px;
+}
+
+/* Логотип - нормальный размер */
+.logo {
+  width: 170px; /* Хороший размер, не огромный */
+  height: 170px;
+  border-radius: 15px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 170px; /* Фиксированная ширина */
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  background: transparent;
+
+}
+
+/* Картинка внутри логотипа */
+.logo img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+
+/* Текст - занимает оставшееся пространство */
+.hero-text {
+  flex: 1; /* Занимает все оставшееся пространство */
+  text-align: center; /* Текст прижат к левой стороне */
+
+}
+
+.hero-text h1 {
+  margin: 0;
+  font-size: 20px;
+  line-height: 1.0;
+  font-weight: 300; /* Нормальная жирность */
+  color: var(--text);
+  text-align: center; /* Текст слева */
+}
+
+.hero-text p {
+  margin: 8px 0 0 0;
+  color: var(--muted);
+  font-size: 14px;
+  text-align: center; /* Текст слева */
+  line-height: 1.4;
+}
+
+    /* Трофей справа (маленький) */
+    .hero .trophy {
+      width:80px;
+      height:80px;
+      flex:0 0 80px;
+    }
+
+    /* Таймер */
+    .timer-wrap{
+      display:flex;
+      justify-content:center;
+      margin:0 -4px 40px -4px;
+    }
+    .timer {
+      background:#2e2e2e;
+      padding:14px 26px;
+      border-radius:22px;
+      min-width:220px;
+      text-align:center;
+      box-shadow:0 6px 18px rgba(0,0,0,0.6);
+      border:0.5px solid #dbdbdb;
+    }
+    .timer .time {
+      font-family: 'Roboto Mono', monospace;
+      font-weight:700;
+      color:var(--accent);
+      font-size:18px;
+    }
+    .timer .caption {
+      display:block;
+      margin-top:6px;
+      font-size:13px;
+      color:#aaa6a6;
+    }
+
+    /* Список действий (карточки с рамкой) */
+    .actions {
+      display:grid;
+      gap:30px;
+      margin-bottom:40px;
+      margin-top:40px;
+
+    }
+    .action {
+      display:flex;
+      gap:14px;
+      align-items:center;
+      padding:8px;
+      border-radius:0px;
+      background:#2e2e2e;
+      border:2px solid #ffca1d; /* тонкая жёлтая рамка */
+      cursor:pointer;
+      transition:transform .08s ease, box-shadow .08s ease;
+      justify-content: flex-start; /* Выравнивание содержимого по левому краю */
+      text-align: left; /* Для текста внутри */
+    }
+    .action:active{transform:translateY(1px)}
+    .action .icon {
+      width: 48px;
+      height: 48px;
+      min-width: 48px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      /* Убираем желтую рамку и фон: */
+      background: transparent;
+      border: none;
+      /* Для изображений: */
+      overflow: hidden;
+    }
+    .action .icon img {
+      width: 75%;
+      height: 75%;
+      object-fit: contain;
+      display: block;
+    }
+    .action .text {
+      flex:1;
+      color: white;
+    }
+    .action .title {
+      font-weight:700;
+      font-size:20px;
+      margin-bottom:4px;
+    }
+    .action .desc {
+      font-size:13px;
+      color:white;
+    }
+
+
+
+
+    /* Секция билетов */
+    .tickets {
+      background:#2e2e2e;
+      border-radius:4px;
+      padding:16px;
+      box-shadow:var(--shadow);
+      margin-bottom:24px;
+    }
+    .tickets h2 {
+      margin:0 0 12px 0;
+      font-size:20px;
+      font-weight:700;
+      color: white;
+    }
+
+    .ticket-wrap {
+      background:#2e2e2e;
+      border-radius:12px;
+      padding:18px;
+      display:flex;
+      justify-content:center;
+      align-items:center;
+    }
+
+    .ticket-pill {
+      width:100%;
+      max-width:340px;
+      background:#ffc100;
+      color:black;
+      padding:12px 18px;
+      border-radius:20px;
+      font-weight:800;
+      text-align:center;
+      box-shadow:0 8px 18px rgba(247,181,0,0.12);
+      border:1px solid white;
+      font-size:18px;
+    }
+    .ticket-pill small{
+      display:block;
+      font-weight:700;
+      margin-top:8px;
+      font-size:14px;
+      color:black;
+    }
+
+    /* Контролы (локальные) */
+    .controls {
+      display:flex;
+      gap:10px;
+      justify-content:space-between;
+      align-items:center;
+    }
+    .btn {
+      border-radius:10px;
+      padding:10px 12px;
+      font-weight:700;
+      cursor:pointer;
+      border:none;
+    }
+    .btn-ghost{
+      background:transparent;
+      color:var(--muted);
+      border:1px solid rgba(255,255,255,0.04);
+    }
+    .btn-primary{
+      background:var(--accent);
+      color:var(--bg);
+    }
+
+    /* Адаптив */
+    @media (max-width:360px){
+      .logo{width:50px;height:50px}
+      .hero .trophy{display:none}
+      .timer{min-width:150px}
+      .ticket-pill{max-width:300px}
+    }
+
+
+
+  </style>
+</head>
+<body>
+
+  <div class="app" role="application" aria-labelledby="appTitle">
+    <header class="hero" role="banner">
+
+
+      <div class="hero-text">
+        <h1 id="appTitle">Вы участвуете в<br> розыгрыше!</h1>
+        <p>Не отписывайтесь от каналов до окончания розыгрыша!</p>
+      </div>
+
+        <div class="logo" aria-hidden="true">
+          <img src="/static/images/logo.png" alt="Иконка">
+      </div>
+
+      </svg>
+    </header>
+
+    <main>
+      <!-- Таймер -->
+      <div class="timer-wrap" aria-live="polite">
+        <div class="timer" role="status" aria-atomic="true">
+          <div class="time" id="timer">Розыгрыш завершен</div>
+          <span class="caption">До окончания розыгрыша</span>
+        </div>
+      </div>
+
+
+      <!-- Билеты -->
+      <section class="tickets" aria-labelledby="ticketsTitle">
+        <h2 id="ticketsTitle">Ваши билеты</h2>
+
+        <div class="ticket-wrap" aria-live="polite">
+          <div class="ticket-pill" id="ticketPill">
+            <div>Билет: <strong id="ticketCode">PPMPO</strong></div>
+            <small id="ticketTime">Получен: 13:30 12.12.2025</small>
+          </div>
+        </div>
+      </section>
+
+
+    </main>
+  </div>
+
+  <script>
+    /* ============================
+       JS: Telegram WebApp + UI
+       - Инициализация Telegram.WebApp
+       - MainButton: установка текста и отправка payload
+       - Локальная отладка (кнопка)
+       - Таймер обратного отсчёта (по умолчанию 10 минут)
+       ============================ */
+
+    (function(){
+      // --- Конфиг ---
+      const DEFAULT_SECONDS = 10 * 60; // 10 минут
+      let remaining = DEFAULT_SECONDS;
+
+      // Telegram WebApp объект (если запущено внутри Telegram)
+      const hasTG = !!(window.Telegram && window.Telegram.WebApp);
+      const tg = hasTG ? window.Telegram.WebApp : null;
+
+      // Элементы UI
+      const timerEl = document.getElementById('timer');
+      const inviteBtn = document.getElementById('invite');
+      const notifyBtn = document.getElementById('notify');
+      const boostBtn = document.getElementById('boost');
+      const localSend = document.getElementById('localSend');
+      const themeToggle = document.getElementById('themeToggle');
+
+      // MAIN BUTTON text (Telegram)
+      const MAIN_TEXT = "Получить билет";
+
+      // Инициализация Telegram WebApp
+      if (hasTG) {
+        try {
+          tg.ready();
+          tg.MainButton.setText(MAIN_TEXT);
+          tg.MainButton.show();
+          tg.onEvent('mainButtonClicked', onMainButtonClicked);
+        } catch (e) {
+          console.warn('Telegram init error', e);
+        }
+      } else {
+        console.log('Не внутри Telegram — локальный режим');
+      }
+
+      // Простые обработчики карточек (замените на реальную логику)
+      inviteBtn.addEventListener('click', ()=> {
+        // В реальном приложении — открывайте ссылку приглашения или формируйте invite
+        alert('Приглашение друзей (замени на логику приглашения).');
+      });
+      notifyBtn.addEventListener('click', ()=> {
+        alert('Включение уведомлений (замени на реальную логику).');
+      });
+      boostBtn.addEventListener('click', ()=> {
+        alert('Буст (замени на серверную логику).');
+      });
+
+      // Локальная отправка (для теста вне Telegram)
+      localSend.addEventListener('click', ()=> {
+        sendPayload(false);
+      });
+
+      // Тема (переключение светлой/тёмной — просто пример)
+      themeToggle.addEventListener('click', ()=> {
+        const isLight = document.documentElement.classList.toggle('light');
+        themeToggle.setAttribute('aria-pressed', String(isLight));
+      });
+
+      // Отправка данных (через tg.sendData если в Telegram)
+      function onMainButtonClicked(){
+        sendPayload(true);
+      }
+
+      function sendPayload(fromTelegram){
+        // Соберите реальную полезную нагрузку (например: userId, actions, ticketId и т.д.)
+        const payload = {
+          action: 'get_ticket',
+          ts: new Date().toISOString(),
+          invited: false,
+          notifications: false,
+          boost: false,
+          // Можно добавить initDataUnsafe если нужно
+        };
+
+        if (fromTelegram && hasTG) {
+          try {
+            tg.sendData(JSON.stringify(payload));
+            tg.MainButton.setText('Отправлено');
+            setTimeout(()=>{ try { tg.close(); } catch(e){} }, 700);
+          } catch (e) {
+            console.error('Ошибка отправки в Telegram', e);
+            alert('Не удалось отправить данные в Telegram.');
+          }
+        } else {
+          console.log('Payload (локально):', payload);
+          alert('Данные подготовлены локально. Проверьте консоль.');
+        }
+      }
+
+      // Таймер
+      let interval = null;
+      function startTimer(seconds){
+        remaining = Math.max(0, seconds);
+        renderTime(remaining);
+        if (interval) clearInterval(interval);
+        interval = setInterval(()=>{
+          remaining--;
+          if (remaining <= 0) {
+            clearInterval(interval);
+            renderTime(0);
+            onTimerEnd();
+            return;
+          }
+          renderTime(remaining);
+        }, 1000);
+      }
+
+      function renderTime(s){
+        const h = Math.floor(s/3600);
+        const m = Math.floor((s%3600)/60);
+        const sec = s%60;
+        const parts = [];
+        if (h>0) parts.push(String(h).padStart(2,'0'));
+        parts.push(String(m).padStart(2,'0'));
+        parts.push(String(sec).padStart(2,'0'));
+        timerEl.textContent = parts.join(':');
+      }
+
+      function onTimerEnd(){
+        timerEl.textContent = '00:00:00';
+        if (hasTG){
+          try { tg.MainButton.setText('Розыгрыш завершён'); tg.MainButton.disable(); } catch(e){}
+        }
+        // Доп. логика по окончании (показать уведомление/обновить UI)
+      }
+
+      // Инициализация: можно передать seconds через ?seconds=NN в URL (удобно для тестов)
+      (function init(){
+        try {
+          const p = new URLSearchParams(location.search);
+          const s = p.get('seconds');
+          if (s && !isNaN(Number(s))) startTimer(Number(s));
+          else startTimer(DEFAULT_SECONDS);
+        } catch(e){
+          startTimer(DEFAULT_SECONDS);
+        }
+      })();
+    })();
+  </script>
+</body>
+</html>

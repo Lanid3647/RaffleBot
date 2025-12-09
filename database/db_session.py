@@ -1,0 +1,42 @@
+# database/db_session.py
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker, declarative_base
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+
+# URL БЕЗ SSL для теста
+DATABASE_URL = "postgresql://postgres:Fynza3-gocnyw-xurzed@db.osvztgewhvuswokqxlyu.supabase.co:5432/postgres?sslmode=disable"
+
+# ИЛИ с минимальным таймаутом
+DATABASE_URL_SSL = "postgresql://postgres:Fynza3-gocnyw-xurzed@db.osvztgewhvuswokqxlyu.supabase.co:5432/postgres?sslmode=require"
+
+# Пробуем без SSL сначала
+engine = create_engine(
+    DATABASE_URL,  # ← БЕЗ SSL
+    pool_size=2,
+    max_overflow=0,
+    pool_timeout=30,
+    pool_recycle=1800,
+    echo=True
+)
+
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+Base = declarative_base()
+
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
+
+
+
+
+
+
+
+

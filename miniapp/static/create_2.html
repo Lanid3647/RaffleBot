@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Мини-приложение — Проверка подписок</title>
+<style>
+  :root{
+    --bg-page: #000000;
+    --phone-bg: #000000;
+    --card-bg: #222;          /* фон блоков каналов */
+    --panel-bg: #2f2f2f;      /* фон центральных панелей */
+    --muted: #bdbdbd;
+    --text: #ffffff;
+    --accent: #f5b21a;        /* жёлтый/оранжевый акцент */
+    --accent-dark: #d99c13;
+    --success: #2fb86f;
+    --danger: #ff9a2e;
+    --gap: 14px;
+    --phone-max-w: 420px;
+    --phone-pad: 12px;
+    --radius-large: 14px;
+    --radius-medium: 10px;
+    --safe-fonts: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  }
+
+  /* Базовая страница */
+  html,body{
+    height:100%;
+    margin:0;
+    padding:0;
+    background: var(--bg-page);
+    font-family: var(--safe-fonts);
+    color: var(--text);
+    -webkit-font-smoothing:antialiased;
+    -moz-osx-font-smoothing:grayscale;
+  }
+
+  /* Центрируем "телефон" */
+  .page-wrap{
+    min-height:100vh;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:8px;
+  }
+
+  .phone-screen{
+    width:100%;
+    max-width: var(--phone-max-w);
+    background: var(--phone-bg);
+    border-radius: 18px;
+    padding: var(--phone-pad);
+    box-shadow: 0 8px 40px rgba(0,0,0,0.6);
+    box-sizing:border-box;
+  }
+
+/* Стало: */
+.header{
+  display:flex;
+  align-items:center; /* Центрируем по вертикали */
+  justify-content: center; /* Центрируем по горизонтали */
+  gap:12px;
+  margin-top:6px;
+  margin-bottom:30px;
+  text-align: center; /* Центрируем текст */
+}
+
+
+  /* Стало: */
+.header .hero-icon{
+  width:65px;
+  height:65px;
+  flex:0 0 64px;
+  border-radius:14px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.6);
+  background: transparent; /* ПРОЗРАЧНЫЙ фон */
+
+}
+  /* Стало: */
+.header .hero-icon img{
+  width: 150%; /* Занимает всю ширину контейнера */
+  height: 150%; /* Занимает всю высоту контейнера */
+  object-fit: contain; /* Сохраняет пропорции */
+  display:block;
+  border-radius:10px;
+}
+
+  /* Для текста внутри заголовка */
+.header .title-wrap{
+  flex:1 1 auto;
+  position:relative;
+  text-align: center; /* Центрируем текст */
+}
+  .title{
+  font-size:17px;
+  line-height:1.2; /* Увеличим межстрочный интервал */
+  margin:0;
+  color:var(--text);
+  font-weight:400;
+  text-align: center; /* Центрируем заголовок */
+}
+
+
+ /* Таймер — центральная pill-карта */
+.timer-wrap{
+  display:flex;
+  justify-content:center;
+  margin:0 -4px 20px -4px; /* ОБНОВИЛИ отступы как в примере */
+}
+
+.timer{
+  background:#2e2e2e;
+  padding:15px 0px;
+  border-radius:20px;
+  min-width:220px;
+  text-align:center;
+  box-shadow:0 6px 18px rgba(0,0,0,0.6);
+  border:0.5px solid #dbdbdb;
+}
+
+.timer .time {
+  font-family: 'Roboto Mono', monospace;
+  font-weight:700;
+  color: #ffbf2e; /* Желтый цвет как в примере */
+  font-size:18px;
+}
+
+.timer .caption {
+  display:block;
+  margin-top:6px;
+  font-size:13px;
+  color: #9aa0a6; /* Серый цвет как в примере */
+}
+
+  /* Большая кнопка проверки подписок */
+  .check-btn{
+    width:100%;
+    border-radius:0px;
+    padding:10px ;
+    margin: 14px 0;
+    background: #2e2e2e;
+    border: 1px solid var(--accent);
+    color: var(--accent);
+    font-size:18px;
+    font-weight:500;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    cursor:pointer;
+  }
+  .check-btn:active{ transform:translateY(1px); }
+
+  /* Секции заголовков (Telegram, ВКонтакте) */
+  .section-title{
+    font-size:16px;
+    margin:8px 6px 6px;
+    color: var(--text);
+    font-weight:600;
+  }
+
+  /* Список карточек каналов */
+  .channel-list{ display:flex; flex-direction:column; gap:12px; padding:6px 4px 12px; }
+
+  .channel{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    background: linear-gradient(180deg,#2a2a2a,#252525);
+    border-radius:12px;
+    padding:10px;
+    border: 1px solid rgba(255,255,255,0.03);
+    box-shadow: 0 6px 14px rgba(0,0,0,0.45);
+  }
+
+  .channel .avatar{
+    width:48px;
+    height:48px;
+    border-radius:50%;
+    background:#4a4a4a;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    flex: 0 0 48px;
+    color:#fff;
+    font-weight:700;
+    font-size:18px;
+  }
+
+  .channel .body{
+    flex:1 1 auto;
+    display:flex;
+    flex-direction:column;
+    gap:6px;
+    min-width:0;
+  }
+  .channel .name{
+    font-size:15px;
+    color:var(--text);
+    font-weight:600;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+  .channel .meta-row{
+    display:flex;
+    gap:8px;
+    align-items:center;
+  }
+  .pill{
+    display:inline-block;
+    padding:4px 8px;
+    border-radius:3px;
+    font-size:12px;
+    color:#111;
+    background: #c9f1d7;
+  }
+  .pill.not{ background:#f7d58c; color:#111; } /* not subscribed */
+
+  .channel .cta{
+    margin-left:12px;
+    flex:0 0 auto;
+  }
+
+  .btn-sub{
+    padding:8px 12px;
+    border-radius:10px;
+    border: none;
+    background: linear-gradient(180deg,var(--accent),var(--accent-dark));
+    color:#111;
+    font-weight:700;
+    cursor:pointer;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.4);
+  }
+  .btn-check{ /* green check circle */
+    width:36px;
+    height:36px;
+    border-radius:50%;
+    background:var(--success);
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    color:#08220e;
+    font-weight:700;
+    flex:0 0 36px;
+    margin-left:10px;
+  }
+
+  /* маленькая кнопка "Подписаться" стиля outline */
+  .btn-sub.outline{
+    background: linear-gradient(180deg,#ffb84a,#ff9a2e);
+    color:#140f06;
+  }
+
+  /* отделитель секции */
+  .section-sep{ height:10px; }
+
+  /* адаптивные правки */
+  @media (max-width:420px){
+    .header .hero-icon{ width:56px; height:56px; flex:0 0 56px; }
+    .title{ font-size:18px; }
+    .timer{ min-width:150px; padding:10px 16px; border-radius:12px; }
+    .time-value{ font-size:16px; }
+    .check-btn{ font-size:16px; padding:10px; }
+    .channel .avatar{ width:44px; height:44px; flex:0 0 44px; font-size:16px; }
+    .btn-sub{ padding:8px 10px; font-size:14px; }
+    .btn-check{ width:32px; height:32px; }
+  }
+
+
+</style>
+</head>
+<body>
+  <div class="page-wrap">
+    <div class="phone-screen" role="application" aria-label="Проверка подписок">
+
+      <!-- header -->
+      <div class="header">
+        <div class="hero-icon" aria-hidden="true">
+          <!-- замените src на свою иконку -->
+          <img src="/static/images/!!!.png" alt="Пригласить" >
+        </div>
+
+        <div class="title-wrap">
+          <div class="title"><span class="title-underline">Подпишитесь на все указанные ниже каналы</span></div>
+        </div>
+      </div>
+
+      <!-- timer -->
+      <div class="timer-wrap">
+          <div class="timer" role="timer" aria-live="polite" aria-atomic="true">
+            <div class="time" id="timeValue">00:10:00</div>
+            <span class="caption">До окончания розыгрыша</span>
+          </div>
+      </div>
+
+      <!-- big check button -->
+      <button class="check-btn" id="checkBtn" type="button">Проверить подписки</button>
+
+      <!-- Telegram channels -->
+      <div class="section-title">Telegram каналы</div>
+      <div class="channel-list" id="tgList">
+        <div class="channel">
+          <div class="avatar">T</div>
+          <div class="body">
+            <div class="name">Частный канал</div>
+            <div class="meta-row">
+              <div class="pill" style="background:#2fb86f;color:#07220d">Подписан</div>
+            </div>
+          </div>
+          <div class="cta"><div class="btn-check">✓</div></div>
+        </div>
+
+        <div class="channel">
+          <div class="avatar">T</div>
+          <div class="body">
+            <div class="name">Ппппппппп</div>
+            <div class="meta-row">
+              <div class="pill not">Не подписан</div>
+            </div>
+          </div>
+          <div class="cta"><button class="btn-sub outline">Подписаться</button></div>
+        </div>
+      </div>
+
+      <div class="section-sep"></div>
+
+      <!-- VK channels -->
+      <div class="section-title">Каналы Вконтакте</div>
+      <div class="channel-list" id="vkList">
+        <div class="channel">
+          <div class="avatar">V</div>
+          <div class="body">
+            <div class="name">Частный канал</div>
+            <div class="meta-row">
+              <div class="pill" style="background:#2fb86f;color:#07220d">Подписан</div>
+            </div>
+          </div>
+          <div class="cta"><div class="btn-check">✓</div></div>
+        </div>
+
+        <div class="channel">
+          <div class="avatar">V</div>
+          <div class="body">
+            <div class="name">Ппппппппп</div>
+            <div class="meta-row">
+              <div class="pill not">Не подписан</div>
+            </div>
+          </div>
+          <div class="cta"><button class="btn-sub outline">Подписаться</button></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    // Пример: симуляция обратного отсчёта
+    (function(){
+      let secs = 10*60; // 10 минут
+      const el = document.getElementById('timeValue');
+      function fmt(s){
+        const mm = String(Math.floor(s/60)).padStart(2,'0');
+        const ss = String(s%60).padStart(2,'0');
+        return mm + ':' + ss;
+      }
+      function tick(){
+        if(secs <= 0){ el.textContent = "00:00"; return; }
+        el.textContent = fmt(secs);
+        secs--;
+      }
+      tick();
+      setInterval(tick,1000);
+    })();
+
+    // Пример: кнопка проверки подписок — просто демонстрация
+    document.getElementById('checkBtn').addEventListener('click', function(){
+      this.textContent = 'Проверяю...';
+      this.disabled = true;
+      setTimeout(()=>{ this.textContent = 'Проверить подписки'; this.disabled = false; alert('Проверка завершена (демо).'); }, 1500);
+    });
+  </script>
+</body>
+</html>

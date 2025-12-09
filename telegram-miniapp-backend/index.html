@@ -1,0 +1,197 @@
+
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎁 Telegram MiniApp</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .status {
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+            text-align: center;
+            font-weight: bold;
+        }
+        .loading {
+            background: #fff3cd;
+            color: #856404;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        button {
+            width: 100%;
+            padding: 18px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 15px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s;
+            margin-top: 20px;
+        }
+        button:hover {
+            transform: translateY(-2px);
+        }
+        .info {
+            background: #e9ecef;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 15px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎯 Участие в розыгрыше</h1>
+
+        <div class="info">
+            <p><strong>Мини-приложение работает на PythonAnywhere!</strong></p>
+            <p>Это тестовая версия. При нажатии кнопки "Участвовать" будет:</p>
+            <ol>
+                <li>Проверена подписка на каналы</li>
+                <li>Запись в базу данных</li>
+                <li>Показ подтверждения</li>
+            </ol>
+        </div>
+
+        <div id="status" class="status loading">
+            Загрузка мини-приложения...
+        </div>
+
+        <button onclick="participate()">
+            🎁 Участвовать в розыгрыше
+        </button>
+
+        <button onclick="testAPI()" style="background: #17a2b8; margin-top: 10px;">
+            🔄 Проверить API
+        </button>
+
+        <div id="result" style="margin-top: 20px;"></div>
+    </div>
+
+    <script>
+        // Инициализация Telegram Web App
+        const tg = window.Telegram.WebApp;
+        tg.expand();
+        tg.ready();
+
+        // Получаем raffle_id из URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const raffleId = urlParams.get('raffle_id') || 1;
+
+        // Обновляем статус
+        document.getElementById('status').className = 'status success';
+        document.getElementById('status').textContent = '✅ Мини-приложение готово!';
+
+        // Функция для участия в розыгрыше
+        async function participate() {
+            const statusEl = document.getElementById('status');
+            const resultEl = document.getElementById('result');
+
+            statusEl.className = 'status loading';
+            statusEl.textContent = 'Регистрируем участие...';
+            resultEl.innerHTML = '';
+
+            try {
+                // Отправляем запрос на API
+                const response = await fetch('/api/participate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Telegram-Init-Data': tg.initData || 'test'
+                    },
+                    body: JSON.stringify({
+                        raffle_id: parseInt(raffleId),
+                        user_data: tg.initDataUnsafe.user || { id: 123456789 }
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    statusEl.className = 'status success';
+                    statusEl.textContent = '✅ ' + data.message;
+
+                    resultEl.innerHTML = `
+                        <div style="background: #d4edda; padding: 20px; border-radius: 10px; margin-top: 20px;">
+                            <h3 style="color: #155724; margin-top: 0;">🎉 Вы участвуете!</h3>
+                            <p><strong>Ваш номер:</strong> ${data.participant?.position || 1}</p>
+                            <p><strong>Количество билетов:</strong> ${data.participant?.tickets || 1}</p>
+                            <p><strong>ID розыгрыша:</strong> ${raffleId}</p>
+                        </div>
+                    `;
+                } else {
+                    statusEl.className = 'status error';
+                    statusEl.textContent = '❌ ' + data.message;
+                }
+            } catch (error) {
+                statusEl.className = 'status error';
+                statusEl.textContent = '❌ Ошибка соединения с сервером';
+                resultEl.innerHTML = `<p style="color: #721c24;">${error.message}</p>`;
+            }
+        }
+
+        // Функция для проверки API
+        async function testAPI() {
+            const resultEl = document.getElementById('result');
+
+            try {
+                const response = await fetch('/api/test');
+                const data = await response.json();
+
+                resultEl.innerHTML = `
+                    <div style="background: #d1ecf1; padding: 20px; border-radius: 10px; margin-top: 20px;">
+                        <h3 style="color: #0c5460; margin-top: 0;">✅ API работает!</h3>
+                        <pre style="background: white; padding: 10px; border-radius: 5px; overflow: auto;">
+${JSON.stringify(data, null, 2)}
+                        </pre>
+                    </div>
+                `;
+            } catch (error) {
+                resultEl.innerHTML = `
+                    <div style="background: #f8d7da; padding: 20px; border-radius: 10px; margin-top: 20px;">
+                        <h3 style="color: #721c24; margin-top: 0;">❌ Ошибка API</h3>
+                        <p>${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        // Автоматически проверяем API при загрузке
+        setTimeout(testAPI, 1000);
+
+        console.log('Telegram Web App инициализирован:', tg.initDataUnsafe.user);
+    </script>
+</body>
+</html>
+EOF
