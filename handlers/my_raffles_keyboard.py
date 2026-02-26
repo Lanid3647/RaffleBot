@@ -1,8 +1,7 @@
-"""from database.models import  Participant
+from database.models import Participant, BotUser, Raffle
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ContextTypes, ConversationHandler, MessageHandler, filters
 from database.db_session import get_db
-from database.models import BotUser, Raffle
 
 
 # Состояния для ConversationHandler
@@ -17,7 +16,10 @@ async def my_raffles_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     bot_user = db.query(BotUser).filter_by(telegram_id=user.id).first()
 
     if not bot_user:
-        await update.message.reply_text("❌ Пользователь не найден")
+        await update.message.reply_text(
+            "❌ Пользователь не найден",
+            parse_mode='HTML'
+        )
         return ConversationHandler.END
 
     # Получаем все розыгрыши пользователя
@@ -82,7 +84,11 @@ async def my_raffles_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     reply_markup = InlineKeyboardMarkup(keyboard)
 
     # Отправляем сообщение
-    await update.message.reply_text(text, reply_markup=reply_markup)
+    await update.message.reply_text(
+        text, 
+        reply_markup=reply_markup,
+        parse_mode='HTML'
+    )
 
     return STEP_RAFFLES_1
 
@@ -99,7 +105,8 @@ async def handle_raffle_selection(update: Update, context: ContextTypes.DEFAULT_
         from keyboards.base_keyboards import get_bot_menu
         await query.edit_message_text(
             "⚡️ Главное меню ⚡️",
-            reply_markup=get_bot_menu()
+            reply_markup=get_bot_menu(),
+            parse_mode='HTML'
         )
         return ConversationHandler.END
 
@@ -172,7 +179,11 @@ async def handle_raffle_selection(update: Update, context: ContextTypes.DEFAULT_
 
             reply_markup = InlineKeyboardMarkup(keyboard)
 
-            await query.edit_message_text(text, reply_markup=reply_markup)
+            await query.edit_message_text(
+                text, 
+                reply_markup=reply_markup,
+                parse_mode='HTML'
+            )
 
             return STEP_RAFFLES_2
 
@@ -205,6 +216,10 @@ async def handle_raffle_actions(update: Update, context: ContextTypes.DEFAULT_TY
     elif data.startswith("delete_"):
         raffle_id = int(data.split("_")[1])
         return await confirm_delete(update, context, raffle_id)
+    
+    elif data.startswith("csv_"):
+        raffle_id = int(data.split("_")[1])
+        return await download_csv(update, context, raffle_id)
 
     elif data == "cancel_edit":
         # Отмена редактирования - возвращаемся к деталям розыгрыша
@@ -244,6 +259,7 @@ async def show_results(update: Update, context: ContextTypes.DEFAULT_TYPE, raffl
 
     # Получаем статистику
     participants_count = db.query(Participant).filter_by(raffle_id=raffle_id).count()
+    winners_count = db.query(Participant).filter_by(raffle_id=raffle_id, is_winner=True).count()
 
     # Получаем список участников
     participants = db.query(Participant).filter_by(raffle_id=raffle_id).all()
@@ -252,28 +268,37 @@ async def show_results(update: Update, context: ContextTypes.DEFAULT_TYPE, raffl
         f"📊 Результаты розыгрыша\n\n"
         f"🏷 Название: {raffle.name}\n"
         f"👥 Всего участников: {participants_count}\n"
-        f"🏆 Будет выбрано победителей: {raffle.winners_count}\n"
+        f"🏆 Победителей: {winners_count}/{raffle.winners_count}\n"
     )
 
+    if raffle.status == 'completed' and winners_count > 0:
+        text += f"\n🏆 Победители:\n"
+        winners = db.query(Participant).filter_by(raffle_id=raffle_id, is_winner=True).all()
+        for i, winner in enumerate(winners, 1):
+            username = winner.username or f"ID: {winner.user_id}"
+            text += f"{i}. @{username}\n"
+    elif participants_count > 0:
+        text += f"\n📋 Список участников (первые 20):\n"
+        for i, participant in enumerate(participants[:20], 1):
+            username = participant.username or f"ID: {participant.user_id}"
+            text += f"{i}. @{username}\n"
+
+    if participants_count > 20:
+        text += f"\n... и еще {participants_count - 20} участников"
+
+    # Кнопки для возврата и CSV
+    keyboard = []
     if participants_count > 0:
-        text += f"\n📋 Список участников:\n"
-        for i, participation in enumerate(participants[:50], 1):  # Показываем первые 50
-            participant = db.query(Participant).filter_by(id=participation.participant_id).first()
-            if participant:
-                username = participant.username or f"ID: {participant.telegram_id}"
-                text += f"{i}. @{username} - {participation.tickets_count} билет(ов)\n"
-
-    if participants_count > 50:
-        text += f"\n... и еще {participants_count - 50} участников"
-
-    # Кнопки для возврата
-    keyboard = [
-        [InlineKeyboardButton("⬅️ Назад к розыгрышу", callback_data=f"raffle_{raffle_id}")]
-    ]
+        keyboard.append([InlineKeyboardButton("📥 Скачать CSV", callback_data=f"csv_{raffle_id}")])
+    keyboard.append([InlineKeyboardButton("⬅️ Назад к розыгрышу", callback_data=f"raffle_{raffle_id}")])
 
     reply_markup = InlineKeyboardMarkup(keyboard)
 
-    await query.edit_message_text(text, reply_markup=reply_markup)
+    await query.edit_message_text(
+        text, 
+        reply_markup=reply_markup,
+        parse_mode='HTML'
+    )
 
     return STEP_RAFFLES_2
 
@@ -303,7 +328,11 @@ async def start_editing(update: Update, context: ContextTypes.DEFAULT_TYPE, raff
 
     reply_markup = InlineKeyboardMarkup(keyboard)
 
-    await query.edit_message_text(text, reply_markup=reply_markup)
+    await query.edit_message_text(
+        text, 
+        reply_markup=reply_markup,
+        parse_mode='HTML'
+    )
 
     return STEP_EDIT_1
 
@@ -325,7 +354,8 @@ async def handle_edit_choice(update: Update, context: ContextTypes.DEFAULT_TYPE)
             "• <i>курсив</i>\n"
             "• <u>подчеркнутый</u>\n"
             "• <a href='ссылка'>текст</a>\n\n"
-            "Отправьте текст или напишите 'отмена' для отмены:"
+            "Отправьте текст или напишите 'отмена' для отмены:",
+            parse_mode='HTML'
         )
         return STEP_EDIT_2
 
@@ -340,7 +370,8 @@ async def handle_edit_choice(update: Update, context: ContextTypes.DEFAULT_TYPE)
             "• GIF\n"
             "• Документ\n\n"
             "Или напишите 'удалить' чтобы удалить медиафайл\n"
-            "Или 'отмена' для отмены:"
+            "Или 'отмена' для отмены:",
+            parse_mode='HTML'
         )
         return STEP_EDIT_2
 
@@ -349,7 +380,8 @@ async def handle_edit_choice(update: Update, context: ContextTypes.DEFAULT_TYPE)
         context.user_data['edit_mode'] = 'name'
         await query.edit_message_text(
             "🏷 Введите новое название для розыгрыша:\n\n"
-            "Или напишите 'отмена' для отмены:"
+            "Или напишите 'отмена' для отмены:",
+            parse_mode='HTML'
         )
         return STEP_EDIT_2
 
@@ -369,7 +401,10 @@ async def handle_edit_input(update: Update, context: ContextTypes.DEFAULT_TYPE):
         raffle = db.query(Raffle).filter_by(id=raffle_id).first()
 
         if not raffle:
-            await message.reply_text("❌ Розыгрыш не найден")
+            await message.reply_text(
+                "❌ Розыгрыш не найден",
+                parse_mode='HTML'
+            )
             return await my_raffles_start(update, context)
 
         if text == 'отмена':
@@ -380,45 +415,72 @@ async def handle_edit_input(update: Update, context: ContextTypes.DEFAULT_TYPE):
             if text == 'удалить':
                 raffle.media_caption = ""
                 db.commit()
-                await message.reply_text("✅ Текст удален")
+                await message.reply_text(
+                    "✅ Текст удален",
+                    parse_mode='HTML'
+                )
             else:
                 raffle.media_caption = message.text
                 db.commit()
-                await message.reply_text("✅ Текст обновлен")
+                await message.reply_text(
+                    "✅ Текст обновлен",
+                    parse_mode='HTML'
+                )
 
         elif edit_mode == 'name':
             raffle.name = message.text
             db.commit()
-            await message.reply_text("✅ Название обновлено")
+            await message.reply_text(
+                "✅ Название обновлено",
+                parse_mode='HTML'
+            )
 
         elif edit_mode == 'media':
             if text == 'удалить':
                 raffle.media_type = None
                 raffle.media_file_id = None
                 db.commit()
-                await message.reply_text("✅ Медиафайл удален")
+                await message.reply_text(
+                    "✅ Медиафайл удален",
+                    parse_mode='HTML'
+                )
             elif message.photo:
                 raffle.media_type = 'photo'
                 raffle.media_file_id = message.photo[-1].file_id
                 db.commit()
-                await message.reply_text("✅ Фото обновлено")
+                await message.reply_text(
+                    "✅ Фото обновлено",
+                    parse_mode='HTML'
+                )
             elif message.video:
                 raffle.media_type = 'video'
                 raffle.media_file_id = message.video.file_id
                 db.commit()
-                await message.reply_text("✅ Видео обновлено")
+                await message.reply_text(
+                    "✅ Видео обновлено",
+                    parse_mode='HTML'
+                )
             elif message.animation:
                 raffle.media_type = 'animation'
                 raffle.media_file_id = message.animation.file_id
                 db.commit()
-                await message.reply_text("✅ GIF обновлен")
+                await message.reply_text(
+                    "✅ GIF обновлен",
+                    parse_mode='HTML'
+                )
             elif message.document:
                 raffle.media_type = 'document'
                 raffle.media_file_id = message.document.file_id
                 db.commit()
-                await message.reply_text("✅ Документ обновлен")
+                await message.reply_text(
+                    "✅ Документ обновлен",
+                    parse_mode='HTML'
+                )
             else:
-                await message.reply_text("❌ Пожалуйста, отправьте фото, видео или напишите 'удалить'/'отмена'")
+                await message.reply_text(
+                    "❌ Пожалуйста, отправьте фото, видео или напишите 'удалить'/'отмена'",
+                    parse_mode='HTML'
+                )
                 return STEP_EDIT_2
 
         # Возвращаемся к деталям розыгрыша
@@ -478,7 +540,11 @@ async def confirm_delete(update: Update, context: ContextTypes.DEFAULT_TYPE, raf
 
     reply_markup = InlineKeyboardMarkup(keyboard)
 
-    await query.edit_message_text(text, reply_markup=reply_markup)
+    await query.edit_message_text(
+        text, 
+        reply_markup=reply_markup,
+        parse_mode='HTML'
+    )
 
     return STEP_DELETE_CONFIRM
 
@@ -525,4 +591,43 @@ async def show_raffle_details(update: Update, context: ContextTypes.DEFAULT_TYPE
 
         # Нужно адаптировать логику для работы с обычным сообщением
         # В данном случае просто возвращаем к началу
-        return await my_raffles_start(update, context)"""
+        return await my_raffles_start(update, context)
+
+
+async def download_csv(update: Update, context: ContextTypes.DEFAULT_TYPE, raffle_id: int):
+    """Генерирует и отправляет CSV файл с участниками"""
+    from services.csv_export import generate_csv_for_raffle, get_csv_filename
+    from telegram import InputFile
+    import io
+    
+    query = update.callback_query
+    await query.answer()
+    
+    db = next(get_db())
+    raffle = db.query(Raffle).filter_by(id=raffle_id).first()
+    
+    if not raffle:
+        await query.answer("❌ Розыгрыш не найден", show_alert=True)
+        return STEP_RAFFLES_2
+    
+    # Генерируем CSV
+    csv_content = generate_csv_for_raffle(raffle_id)
+    
+    if not csv_content:
+        await query.answer("❌ Ошибка при генерации CSV", show_alert=True)
+        return STEP_RAFFLES_2
+    
+    # Создаем файл для отправки
+    filename = get_csv_filename(raffle_id, raffle.name)
+    csv_file = InputFile(io.BytesIO(csv_content), filename=filename)
+    
+    try:
+        await query.message.reply_document(
+            document=csv_file,
+            caption=f"📊 CSV файл с участниками розыгрыша: {raffle.name}"
+        )
+        await query.answer("✅ CSV файл отправлен", show_alert=True)
+    except Exception as e:
+        await query.answer(f"❌ Ошибка при отправке файла: {e}", show_alert=True)
+    
+    return STEP_RAFFLES_2

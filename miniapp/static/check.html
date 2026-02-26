@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+<title>Загрузка...</title>
+<style>
+  body, html {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    background-color: #000; /* чёрный фон */
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start; /* прижать к верху */
+    align-items: center;
+    padding-top: 50px; /* отступ сверху */
+    font-family: Arial, sans-serif;
+  }
+
+  /* Кружок загрузки */
+  .loader {
+    width: 150px;  /* в 2 раза больше */
+    height: 150px; /* в 2 раза больше */
+    border-radius: 50%;
+    background: conic-gradient(#FFD700 0% 25%, #444 25% 100%);
+    animation: rotate 1s linear infinite;
+    margin-bottom: 30px;
+  }
+
+  @keyframes rotate {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+
+  /* Текст под кружком */
+  .loading-text {
+    font-size: 20px; /* крупный текст */
+    color: #fff;     /* белый цвет */
+    text-align: center;
+  }
+</style>
+</head>
+<body>
+  <div class="loader"></div>
+  <div class="loading-text">Проверяем выполнений условий...</div>
+
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <script>
+    // РАЗРЕШАЕМ ОТКРЫТИЕ DEVTOOLS
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'F12' || 
+          (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'J' || e.key === 'C')) ||
+          (e.ctrlKey && e.key === 'U')) {
+        return true;
+      }
+    }, false);
+    
+    const tg = window.Telegram.WebApp;
+    if (tg) {
+      tg.expand();
+      tg.ready();
+    }
+
+    // Функция для проверки регистрации
+    async function checkRegistration() {
+      try {
+        // Получаем данные пользователя из Telegram
+        let telegramId = null;
+        if (tg && tg.initDataUnsafe?.user) {
+          telegramId = tg.initDataUnsafe.user.id;
+        }
+
+        // Функция для получения следующего доступного экрана
+        async function getNextScreen() {
+          try {
+            const response = await fetch('/api/next-screen');
+            const data = await response.json();
+            if (data.success && data.next_screen) {
+              return data.next_screen;
+            }
+          } catch (error) {
+            console.error('Ошибка при получении следующего экрана:', error);
+          }
+          // Запасной вариант
+          return '/create';
+        }
+
+        // Проверяем, есть ли информация о регистрации в sessionStorage
+        const registered = sessionStorage.getItem('user_registered');
+        if (registered === 'true') {
+          // Пользователь уже зарегистрирован в этой сессии
+          const nextScreen = await getNextScreen();
+          window.location.href = nextScreen;
+          return;
+        }
+
+        // Если есть telegram_id, проверяем регистрацию через API
+        if (telegramId) {
+          const response = await fetch(`/api/check-registration?telegram_id=${telegramId}`);
+          const data = await response.json();
+          
+          if (data.registered) {
+            // Пользователь зарегистрирован
+            sessionStorage.setItem('user_registered', 'true');
+            const nextScreen = await getNextScreen();
+            window.location.href = nextScreen;
+            return;
+          }
+        }
+
+        // Пользователь не зарегистрирован - перенаправляем на регистрацию
+        setTimeout(() => {
+          window.location.href = '/registration';
+        }, 2000);
+        
+      } catch (error) {
+        console.error('Ошибка при проверке регистрации:', error);
+        // В случае ошибки перенаправляем на регистрацию
+        setTimeout(() => {
+          window.location.href = '/registration';
+        }, 2000);
+      }
+    }
+
+    // Запускаем проверку регистрации
+    checkRegistration();
+  </script>
+</body>
+</html>

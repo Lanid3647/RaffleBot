@@ -286,5 +286,21 @@
       </div> <!-- .content -->
     </div> <!-- .phone-screen -->
   </div> <!-- .page-wrap -->
+  <script>
+    // РАЗРЕШАЕМ ОТКРЫТИЕ DEVTOOLS
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'F12' || 
+          (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'J' || e.key === 'C')) ||
+          (e.ctrlKey && e.key === 'U')) {
+        return true;
+      }
+    }, false);
+    
+    // Переход на следующий экран через заданное время
+    const screenSwitchDelay = {{ screen_switch_delay|default(3000) }};
+    setTimeout(() => {
+      window.location.href = '/create2';
+    }, screenSwitchDelay);
+  </script>
 </body>
 </html>

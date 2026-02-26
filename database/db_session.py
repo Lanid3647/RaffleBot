@@ -7,7 +7,8 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # URL БЕЗ SSL для теста
-DATABASE_URL = "postgresql://postgres:Fynza3-gocnyw-xurzed@db.osvztgewhvuswokqxlyu.supabase.co:5432/postgres?sslmode=disable"
+# Ранее было: DATABASE_URL = "postgresql://postgres:Fynza3-gocnyw-xurzed@db.osvztgewhvuswokqxlyu.supabase.co:5432/postgres?sslmode=disable"
+DATABASE_URL = "postgresql://bot_user:9349386375365@localhost:5432/raffle_bot"
 
 # ИЛИ с минимальным таймаутом
 DATABASE_URL_SSL = "postgresql://postgres:Fynza3-gocnyw-xurzed@db.osvztgewhvuswokqxlyu.supabase.co:5432/postgres?sslmode=require"

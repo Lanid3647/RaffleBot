@@ -49,7 +49,9 @@ async def add_channel_command(update: Update, context: ContextTypes.DEFAULT_TYPE
 
     if context.user_data.get('adding_channel'):
         await query.message.reply_text(
-            "Вы уже начали добавление канала — пожалуйста, пришлите ссылку на канал или отмените операцию (/cancel).")
+            "Вы уже начали добавление канала — пожалуйста, пришлите ссылку на канал или отмените операцию (/cancel).",
+            parse_mode='HTML'
+        )
         return
     # Устанавливаем режим ожидания ссылки
     context.user_data['adding_channel'] = True
@@ -69,7 +71,8 @@ async def add_channel_command(update: Update, context: ContextTypes.DEFAULT_TYPE
         "• https://t.me/channel_name\n"
         "• @channel_name\n"
         "• ID канала (например: -1001234567890)\n\n"
-        "📤 **Отправьте ссылку на канал:**"
+        "📤 <b>Отправьте ссылку на канал:</b>",
+        parse_mode='HTML'
     )
 
 async def new_version(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -91,11 +94,11 @@ async def new_version(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 f"✅Просмотр результатов розыгрыша\n"
                 f"✅Репост в историю\n"
                 f"✅Скачивание CSV\n"
-                f"✅Проверка подписки на ВК сообщество\n"
                 f"✅Возможность самому выбирать победителя\n"
                 f"✅Статистика в реальном времени по конкурсам\n\n"
                 f"📞 Для подключения расширенной версии обратитесь:\n"
-                f"👤 @XXXX\n"
+                f"👤 @XXXX\n",
+                parse_mode='HTML'
             )
 
 
@@ -190,10 +193,12 @@ class RaffleCreator:
         reply_markup = get_bot_menu()
         await update.message.reply_text(
             "❌️ Создание розыгрыша отменено️",
+            parse_mode='HTML'
         )
         await update.message.reply_text(
             "⚡️️ Главное меню ⚡️️",
-            reply_markup=reply_markup
+            reply_markup=reply_markup,
+            parse_mode='HTML'
         )
 
         return ConversationHandler.END
@@ -237,18 +242,46 @@ class RaffleCreator:
     async def step_1(self, update: Update, context: ContextTypes.DEFAULT_TYPE, is_showing: bool):
         if is_showing:
             # Показываем шаг
-            msg1 = await update.effective_message.reply_text(
-                f"🤖 Шаг 1 из 12: Тип определения победителей\n\n",
-                reply_markup=get_bot_menu_draw_3()
-            )
+            # Проверяем, есть ли у сообщения связь с ботом
+            effective_message = update.effective_message
+            chat_id = effective_message.chat.id
+            
+            # Если у сообщения нет связи с ботом, используем context.bot.send_message
+            try:
+                # Пробуем использовать reply_text
+                msg1 = await effective_message.reply_text(
+                    f"🤖 Шаг 1 из 12: Тип определения победителей\n\n",
+                    reply_markup=get_bot_menu_draw_3(),
+                    parse_mode='HTML'
+                )
+            except (RuntimeError, AttributeError):
+                # Если не получилось, используем context.bot.send_message
+                msg1 = await context.bot.send_message(
+                    chat_id=chat_id,
+                    text=f"🤖 Шаг 1 из 12: Тип определения победителей\n\n",
+                    reply_markup=get_bot_menu_draw_3(),
+                    parse_mode='HTML'
+                )
             self.save_message_id(context, msg1.message_id)
 
-            msg2 = await update.effective_message.reply_text(
-                "Выберите способ определения победителей:\n\n"
-                "🤖 Автоматический - бот случайно выберет победителей\n"
-                "📋 Самостоятельный - вы получите таблицу для самостоятельного подведения\n",
-                reply_markup=get_keyboard_draw_1()
-            )
+            try:
+                msg2 = await effective_message.reply_text(
+                    "Выберите способ определения победителей:\n\n"
+                    "🤖 Автоматический - бот случайно выберет победителей\n"
+                    "📋 Самостоятельный - вы получите таблицу для самостоятельного подведения\n",
+                    reply_markup=get_keyboard_draw_1(),
+                    parse_mode='HTML'
+                )
+            except (RuntimeError, AttributeError):
+                # Если не получилось, используем context.bot.send_message
+                msg2 = await context.bot.send_message(
+                    chat_id=chat_id,
+                    text="Выберите способ определения победителей:\n\n"
+                         "🤖 Автоматический - бот случайно выберет победителей\n"
+                         "📋 Самостоятельный - вы получите таблицу для самостоятельного подведения\n",
+                    reply_markup=get_keyboard_draw_1(),
+                    parse_mode='HTML'
+                )
             self.save_message_id(context, msg2.message_id)
 
             return STEP_1
@@ -281,6 +314,7 @@ class RaffleCreator:
                     f"💡 Для доступа к этой функции подключите расширенную версию.\n\n"
                     f"📞 Для подключения расширенной версии обратитесь:\n"
                     f" 👤 @XXXX",
+                    parse_mode='HTML'
                 )
 
                 return STEP_1
@@ -299,7 +333,8 @@ class RaffleCreator:
             msg = await update.effective_message.reply_text(
                 f"🏆 Шаг 2 из 12: Количество победителей\n\n"
                 f"Введите количество победителей (1-10):",
-                reply_markup=get_bot_menu_draw_1()
+                reply_markup=get_bot_menu_draw_1(),
+                parse_mode='HTML'
             )
             self.save_message_id(context, msg.message_id)
             return STEP_2
@@ -314,7 +349,10 @@ class RaffleCreator:
 
                 return await self.show_step(update, context, STEP_3)
             else:
-                await update.message.reply_text("❌ Введите число от 1 до 10")
+                await update.message.reply_text(
+                    "❌ Введите число от 1 до 10",
+                    parse_mode='HTML'
+                )
                 return STEP_2
 
         return STEP_2
@@ -325,7 +363,8 @@ class RaffleCreator:
             msg = await update.effective_message.reply_text(
                 f"📝 Шаг 3 из 12: Служебное название\n\n"
                 f"Введите служебное название розыгрыша:",
-                reply_markup=get_bot_menu_draw_1()
+                reply_markup=get_bot_menu_draw_1(),
+                parse_mode='HTML'
             )
             self.save_message_id(context, msg.message_id)
             return STEP_3
@@ -340,7 +379,10 @@ class RaffleCreator:
 
                 return await self.show_step(update, context, STEP_4)
             else:
-                await update.message.reply_text("❌ Название не может быть пустым")
+                await update.message.reply_text(
+                    "❌ Название не может быть пустым",
+                    parse_mode='HTML'
+                )
                 return STEP_3
 
         return STEP_3
@@ -350,13 +392,15 @@ class RaffleCreator:
         if is_showing:
             msg1 = await update.effective_message.reply_text(
                 f"⏰ Шаг 4 из 12: Время начала\n\n",
-                reply_markup=get_bot_menu_draw_1()
+                reply_markup=get_bot_menu_draw_1(),
+                parse_mode='HTML'
             )
             self.save_message_id(context, msg1.message_id)
 
             msg2 = await update.effective_message.reply_text(
                 "⏳ Когда нужно опубликовать розыгрыш?",
-                reply_markup=get_time()
+                reply_markup=get_time(),
+                parse_mode='HTML'
             )
             self.save_message_id(context, msg2.message_id)
             return STEP_4
@@ -374,7 +418,8 @@ class RaffleCreator:
                 return await self.show_step(update, context, STEP_5)
             elif query.data == "time_end":
                 msg = await query.message.reply_text(
-                    "Введите время начала (ЧЧ:ММ ДД.ММ.ГГГГ):"
+                    "Введите время начала (ЧЧ:ММ ДД.ММ.ГГГГ):",
+                    parse_mode='HTML'
                 )
                 self.save_message_id(context, msg.message_id)
                 context.user_data['waiting_for_start_time'] = True
@@ -401,11 +446,20 @@ class RaffleCreator:
                         context.user_data['waiting_for_start_time'] = False
                         return await self.show_step(update, context, STEP_5)
                     else:
-                        await update.message.reply_text("❌ Дата и время должны быть в будущем")
+                        await update.message.reply_text(
+                            "❌ Дата и время должны быть в будущем",
+                            parse_mode='HTML'
+                        )
                 except ValueError as e:
-                    await update.message.reply_text(f"❌ Некорректная дата: {e}")
+                    await update.message.reply_text(
+                        f"❌ Некорректная дата: {e}",
+                        parse_mode='HTML'
+                    )
             else:
-                await update.message.reply_text("❌ Неверный формат. Используйте: ЧЧ:ММ ДД.ММ.ГГГГ")
+                await update.message.reply_text(
+                    "❌ Неверный формат. Используйте: ЧЧ:ММ ДД.ММ.ГГГГ",
+                    parse_mode='HTML'
+                )
 
         return STEP_4
 
@@ -421,7 +475,8 @@ class RaffleCreator:
                 f"Введите время окончания розыгрыша в формате: чч:мм дд.мм.гггг:\n\n"
                 f"Например: 15:30 25.12.2025\n"
                 f"(время указывается по МСК)\n",
-                reply_markup=get_bot_menu_draw_1()
+                reply_markup=get_bot_menu_draw_1(),
+                parse_mode='HTML'
             )
             self.save_message_id(context, msg.message_id)
             return STEP_5
@@ -450,13 +505,22 @@ class RaffleCreator:
 
                         return await self.show_step(update, context, STEP_6)
                     else:
-                        await update.message.reply_text("❌ Дата и время должны быть в будущем")
+                        await update.message.reply_text(
+                            "❌ Дата и время должны быть в будущем",
+                            parse_mode='HTML'
+                        )
                         return STEP_5
                 except ValueError:
-                    await update.message.reply_text("❌ Некорректная дата")
+                    await update.message.reply_text(
+                        "❌ Некорректная дата",
+                        parse_mode='HTML'
+                    )
                     return STEP_5
             else:
-                await update.message.reply_text("❌ Неверный формат")
+                await update.message.reply_text(
+                    "❌ Неверный формат",
+                    parse_mode='HTML'
+                )
                 return STEP_5
 
         return STEP_5
@@ -478,7 +542,8 @@ class RaffleCreator:
                 f"• ссылка - <a href='ссылка'>текст</a>\n"
                 f"• копируемый по клику код - <code>текст</code>\n"
                 f"• блок кода - <pre>текст</pre>\n",
-                reply_markup=get_bot_menu_draw_1()
+                reply_markup=get_bot_menu_draw_1(),
+                parse_mode='HTML'
             )
             self.save_message_id(context, msg.message_id)
             return STEP_6
@@ -529,7 +594,8 @@ class RaffleCreator:
             # Проверяем, что хоть что-то есть
             if not content_data['text'] and not content_data['has_media']:
                 await message.reply_text(
-                    "❌ Пожалуйста, отправьте текст или медиафайл для розыгрыша."
+                    "❌ Пожалуйста, отправьте текст или медиафайл для розыгрыша.",
+                    parse_mode='HTML'
                 )
                 return STEP_6
 
@@ -551,13 +617,15 @@ class RaffleCreator:
         if is_showing:
             msg1 = await update.effective_message.reply_text(
                 f"👥 Шаг 7 из 12: Реферальный бонус\n\n",
-                reply_markup=get_bot_menu_draw_1()
+                reply_markup=get_bot_menu_draw_1(),
+                parse_mode='HTML'
             )
             self.save_message_id(context, msg1.message_id)
             msg2 = await update.effective_message.reply_text(
                 f"За сколько приглашенных друзей давать пользователю +1 билет?\n\n"
                 f"Выберите число от 0 до 5 (0 = отключить реферальную систему):\n",
-                reply_markup=get_referral()
+                reply_markup=get_referral(),
+                parse_mode='HTML'
             )
             self.save_message_id(context, msg2.message_id)
             return STEP_7
@@ -589,9 +657,15 @@ class RaffleCreator:
                 }
 
                 if referral_value == 0:
-                    await query.edit_message_text("✅ Реферальная система отключена")
+                    await query.edit_message_text(
+                        "✅ Реферальная система отключена",
+                        parse_mode='HTML'
+                    )
                 else:
-                    await query.edit_message_text(f"✅ За каждых {referral_value} приглашенных друзей +1 билет")
+                    await query.edit_message_text(
+                        f"✅ За каждых {referral_value} приглашенных друзей +1 билет",
+                        parse_mode='HTML'
+                    )
 
                 return await self.show_step(update, context, STEP_8)
 
@@ -610,7 +684,8 @@ class RaffleCreator:
 
             msg1 = await update.effective_message.reply_text(
                 f"📢 Шаг 8 из 12: Выбор каналов публикации\n\n",
-                reply_markup=get_bot_menu_draw_1()
+                reply_markup=get_bot_menu_draw_1(),
+                parse_mode='HTML'
             )
             self.save_message_id(context, msg1.message_id)
 
@@ -620,7 +695,8 @@ class RaffleCreator:
                 f"В них не будет проверяться подписка.\n"
                 f"Каналы для проверки подписки выберите на следующем шаге.\n\n"
                 f"После выбора нажмите 'Продолжить':\n",
-                reply_markup=reply_markup
+                reply_markup=reply_markup,
+                parse_mode='HTML'
             )
             self.save_message_id(context, msg2.message_id)
             return STEP_8
@@ -663,7 +739,8 @@ class RaffleCreator:
                 await query.edit_message_text(
                     f"Выбрано каналов: {len(selected_channels)}\n\n"
                     f"После выбора нажмите 'Продолжить':",
-                    reply_markup=reply_markup
+                    reply_markup=reply_markup,
+                    parse_mode='HTML'
                 )
                 return STEP_8
 
@@ -680,7 +757,10 @@ class RaffleCreator:
 
                 print(f"DEBUG: Сохранены каналы для публикации (Telegram ID): {selected_channels}")
 
-                await query.edit_message_text(f"✅ Выбрано {len(selected_channels)} каналов для публикации")
+                await query.edit_message_text(
+                    f"✅ Выбрано {len(selected_channels)} каналов для публикации",
+                    parse_mode='HTML'
+                )
                 return await self.show_step(update, context, STEP_9)
 
         return STEP_8
@@ -700,16 +780,18 @@ class RaffleCreator:
 
             msg1 = await update.effective_message.reply_text(
                 f"📦 Шаг 9 из 12: Выбор каналов для проверки подписки Телеграмм\n\n",
-                reply_markup=get_bot_menu_draw_1()
+                reply_markup=get_bot_menu_draw_1(),
+                parse_mode='HTML'
             )
             self.save_message_id(context, msg1.message_id)
 
             msg2 = await update.effective_message.reply_text(
                 f"Пользователь должен будет подписаться на эти каналы для участия.\n"
                 f"По умолчанию выбраны каналы публикации, но вы можете отключить, включить любые каналы для проверки подписки.\n\n"
-                f"**Выбрано каналов:** {len(selected_channels)}\n\n"
+                f"<b>Выбрано каналов:</b> {len(selected_channels)}\n\n"
                 f"После выбора нажмите 'Сохранить':\n",
-                reply_markup=reply_markup
+                reply_markup=reply_markup,
+                parse_mode='HTML'
             )
             self.save_message_id(context, msg2.message_id)
 
@@ -755,9 +837,10 @@ class RaffleCreator:
                 await query.edit_message_text(
                     f"Пользователь должен будет подписаться на эти каналы для участия.\n"
                     f"По умолчанию выбраны каналы публикации, но вы можете отключить, включить любые каналы для проверки подписки.\n\n"
-                    f"**Выбрано каналов:** {len(selected_channels)}\n\n"
+                    f"<b>Выбрано каналов:</b> {len(selected_channels)}\n\n"
                     f"После выбора нажмите 'Сохранить':",
-                    reply_markup=reply_markup
+                    reply_markup=reply_markup,
+                    parse_mode='HTML'
                 )
                 return STEP_9
 
@@ -774,7 +857,10 @@ class RaffleCreator:
 
                 print(f"DEBUG: Сохранены каналы для подписки (Telegram ID): {selected_channels}")
 
-                await query.edit_message_text(f"✅ Выбрано {len(selected_channels)} каналов для проверки подписки")
+                await query.edit_message_text(
+                    f"✅ Выбрано {len(selected_channels)} каналов для проверки подписки",
+                    parse_mode='HTML'
+                )
                 return await self.show_step(update, context, STEP_10)
 
         return STEP_9
@@ -794,7 +880,8 @@ class RaffleCreator:
 
             msg1 = await update.effective_message.reply_text(
                 f"✨ Шаг 10 из 12: Дополнительные опции\n\n",
-                reply_markup=get_bot_menu_draw_1()
+                reply_markup=get_bot_menu_draw_1(),
+                parse_mode='HTML'
             )
             self.save_message_id(context, msg1.message_id)
 
@@ -835,7 +922,8 @@ class RaffleCreator:
                 await query.edit_message_text(
                     f"Выбрано опций: {get_selected_count(context)}\n\n"
                     f"После выбора нажмите 'Сохранить':",
-                    reply_markup=reply_markup
+                    reply_markup=reply_markup,
+                    parse_mode='HTML'
                 )
                 return STEP_10
 
@@ -849,7 +937,8 @@ class RaffleCreator:
                 await query.edit_message_text(
                     f"Выбрано опций: {get_selected_count(context)}\n\n"
                     f"После выбора нажмите 'Сохранить':",
-                    reply_markup=reply_markup
+                    reply_markup=reply_markup,
+                    parse_mode='HTML'
                 )
                 return STEP_10
 
@@ -866,7 +955,8 @@ class RaffleCreator:
                 await query.edit_message_text(
                     f"✅ Дополнительные опции сохранены!\n"
                     f"• Буст на удачу: {'✅' if context.user_data['luck_boost_enabled'] else '❌'}\n"
-                    f"• Капча: {'✅' if context.user_data['captcha_enabled'] else '❌'}"
+                    f"• Капча: {'✅' if context.user_data['captcha_enabled'] else '❌'}",
+                    parse_mode='HTML'
                 )
 
                 # Переходим к шагу 11
@@ -892,7 +982,8 @@ class RaffleCreator:
 
             msg1 = await update.effective_message.reply_text(
                 f"✅Шаг 11 из 12: Финальное подтверждение\n",
-                reply_markup=get_bot_menu_draw_1()
+                reply_markup=get_bot_menu_draw_1(),
+                parse_mode='HTML'
             )
             self.save_message_id(context, msg1.message_id)
 
@@ -952,7 +1043,10 @@ class RaffleCreator:
             elif data == "save_raffle":
 
                 # ✅ Редактируем текущее сообщение
-                await query.edit_message_text("💾 Сохраняем розыгрыш...")
+                await query.edit_message_text(
+                    "💾 Сохраняем розыгрыш...",
+                    parse_mode='HTML'
+                )
 
                 # Сохраняем ID сообщения шага 11 для удаления
                 message_ids = context.user_data.get('message_ids', [])
@@ -1001,7 +1095,8 @@ class RaffleCreator:
                 if not raffle:
                     await update.effective_message.reply_text(
                         "❌ Ошибка: розыгрыш не найден в базе данных",
-                        reply_markup=get_bot_menu()
+                        reply_markup=get_bot_menu(),
+                        parse_mode='HTML'
                     )
                     return ConversationHandler.END
                 raffle_id = raffle.id
@@ -1012,7 +1107,8 @@ class RaffleCreator:
             if not raffle:
                 await update.effective_message.reply_text(
                     "❌ Ошибка: розыгрыш не найден в базе данных",
-                    reply_markup=get_bot_menu()
+                    reply_markup=get_bot_menu(),
+                    parse_mode='HTML'
                 )
                 return ConversationHandler.END
 
@@ -1037,11 +1133,13 @@ class RaffleCreator:
                 end_time_str = "не указано"
 
             msg1 = await update.effective_message.reply_text(
-                f"🔄 Создание розыгрыша и публикация в каналах...\n\n"
+                f"🔄 Создание розыгрыша и публикация в каналах...\n\n",
+                parse_mode='HTML'
             )
             self.save_message_id(context, msg1.message_id)
 
             publication_results = []
+            channel_messages_dict = {}  # Словарь для хранения message_id постов
 
             if publication_channels:
                 for channel_id in publication_channels:
@@ -1062,7 +1160,8 @@ class RaffleCreator:
                                 'message_id': message.message_id,
                                 'error': None
                             })
-
+                            # Сохраняем message_id для обновления поста после завершения
+                            channel_messages_dict[str(channel_id)] = message.message_id
                         else:
                             publication_results.append({
                                 'success': False,
@@ -1078,8 +1177,16 @@ class RaffleCreator:
                             'message_id': None,
                             'error': str(e)
                         })
-                else:
-                    publication_results = []
+            else:
+                publication_results = []
+            
+            # Сохраняем message_id постов в БД
+            if channel_messages_dict:
+                import json
+                raffle = db.query(Raffle).filter_by(id=raffle_id).first()
+                if raffle:
+                    raffle.channel_messages = json.dumps(channel_messages_dict)
+                    db.commit()
 
             # Формируем отчет о публикации
             success_count = len([r for r in publication_results if r['success']])
@@ -1303,15 +1410,39 @@ async def publish_giveaway_to_channel(raffle_id: int, channel_id: str, bot, db_s
             end_str = raffle.end_date.strftime("%d.%m.%Y %H:%M")
             post_text += f"⏳ Завершится: {end_str}"
 
-            # 🔥 Web App кнопка - ТЕПЕРЬ ДОЛЖНА РАБОТАТЬ В КАНАЛАХ!
-        keyboard = [
-            [
-                InlineKeyboardButton(
-                    text="🎁 Участвовать",
-                    url=f"hhttps://t.me/testas47635_bot/gdbevebeg636263?start={raffle_id}"
-                )
+        # Получаем имя бота из переменных окружения
+        import os
+        bot_username = os.getenv('BOT_USERNAME', '')
+        if not bot_username:
+            # Пытаемся получить через API
+            try:
+                bot_info = await bot.get_me()
+                bot_username = bot_info.username
+            except:
+                bot_username = 'your_bot_username'
+        
+        # 🔥 Web App кнопка - используем WebAppInfo для мини-приложения
+        # Или обычную ссылку на бота с параметром start
+        webapp_url = os.getenv('WEBAPP_URL', '')
+        if webapp_url:
+            keyboard = [
+                [
+                    InlineKeyboardButton(
+                        text="🎁 Участвовать",
+                        web_app=WebAppInfo(url=f"{webapp_url}?raffle_id={raffle_id}")
+                    )
+                ]
             ]
-        ]
+        else:
+            # Используем обычную ссылку на бота
+            keyboard = [
+                [
+                    InlineKeyboardButton(
+                        text="🎁 Участвовать",
+                        url=f"https://t.me/{bot_username}?start=raffle_{raffle_id}"
+                    )
+                ]
+            ]
 
         reply_markup = InlineKeyboardMarkup(keyboard)
 
@@ -1321,20 +1452,23 @@ async def publish_giveaway_to_channel(raffle_id: int, channel_id: str, bot, db_s
                 chat_id=channel_id,
                 photo=raffle.media_file_id,
                 caption=post_text,
-                reply_markup=reply_markup
+                reply_markup=reply_markup,
+                parse_mode='HTML'
             )
         elif raffle.media_type == 'video' and raffle.media_file_id:
             return await bot.send_video(
                 chat_id=channel_id,
                 video=raffle.media_file_id,
                 caption=post_text,
-                reply_markup=reply_markup
+                reply_markup=reply_markup,
+                parse_mode='HTML'
             )
         else:
             return await bot.send_message(
                 chat_id=channel_id,
                 text=post_text,
-                reply_markup=reply_markup
+                reply_markup=reply_markup,
+                parse_mode='HTML'
             )
 
     except Exception as e:

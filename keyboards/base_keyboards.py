@@ -1,4 +1,8 @@
-from telegram import ReplyKeyboardMarkup, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram import ReplyKeyboardMarkup, InlineKeyboardButton, InlineKeyboardMarkup, KeyboardButton, WebAppInfo
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 
 
@@ -15,6 +19,14 @@ def get_admin_keyboard():
     ]
     return InlineKeyboardMarkup(keyboard)
 
+def get_dashboard_keyboard():
+    """Клавиатура для дашборда с двумя кнопками"""
+    keyboard = [
+        [InlineKeyboardButton("✨ Подключить расширенную версию бота", callback_data="get_new_version")],
+        [InlineKeyboardButton("🎁 Создать розыгрыш", callback_data="start_create_raffle")]
+    ]
+    return InlineKeyboardMarkup(keyboard)
+
 def new_version_2():
     keyboard = [
         [InlineKeyboardButton("✨ Подключить Расширенную версию ✨", callback_data="get_version")],
@@ -22,13 +34,39 @@ def new_version_2():
     return InlineKeyboardMarkup(keyboard)
 
 
-def get_bot_menu():
+def get_bot_menu(webapp_url: str = None, is_admin: bool = False):
+    """
+    Создает главное меню бота
+    webapp_url - URL мини-приложения (должен быть HTTPS)
+    Если URL не указан, пытается взять из переменной окружения WEBAPP_URL
+    is_admin - флаг, является ли пользователь администратором
+    """
     keyboard = [
         ["Создать розыгрыш 🎁"],
-        ["✨ Расширенная версия бота✨\n❗️Включая ВК ❗️"],
+        ["✨ Расширенная версия бота✨"],
         ["Мои каналы 📢", "Техническая поддержка ⁉️"],
         ["Мои розыгрыши 🗒", "О боте ℹ️"]
     ]
+    
+    # Добавляем кнопку админ-панели для администраторов
+    if is_admin:
+        keyboard.append(["👑 Админ-панель"])
+    
+    # Получаем URL из параметра или переменной окружения
+    if not webapp_url:
+        webapp_url = os.getenv('WEBAPP_URL', None)
+    
+    # Убираем слэш в конце URL, если есть
+    if webapp_url:
+        webapp_url = webapp_url.rstrip('/')
+    
+    # Добавляем кнопку WebApp, если URL указан
+    if webapp_url:
+        print(f"[DEBUG] Добавляю кнопку WebApp с URL: {webapp_url}")  # Отладочный вывод
+        keyboard.append([KeyboardButton("🌐 Открыть мини-приложение", web_app=WebAppInfo(url=webapp_url))])
+    else:
+        print("[DEBUG] WEBAPP_URL не найден, кнопка не будет добавлена")  # Отладочный вывод
+    
     return ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
 
 def get_bot_menu_draw_3():
@@ -92,7 +130,7 @@ def get_referral():
 
 def get_channels():
     keyboard = [
-        ["🔸 Каналы Телеграмм","🔹 Каналы Вконтакте" ],
+        ["🔸 Каналы Телеграмм"],
         ["⬅️Назад"]
     ]
     return ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
@@ -102,5 +140,30 @@ def add_channels():
         [InlineKeyboardButton("➕ Добавить новый канал", callback_data="add_channel")],
     ]
     return InlineKeyboardMarkup(keyboard)
+
+def get_webapp_button(webapp_url: str = None):
+    """
+    Создает InlineKeyboardMarkup с кнопкой для открытия мини-приложения
+    webapp_url - URL мини-приложения (должен быть HTTPS)
+    Если URL не указан, пытается взять из переменной окружения WEBAPP_URL
+    """
+    # Получаем URL из параметра или переменной окружения
+    if not webapp_url:
+        webapp_url = os.getenv('WEBAPP_URL', None)
+    
+    # Убираем слэш в конце URL, если есть
+    if webapp_url:
+        webapp_url = webapp_url.rstrip('/')
+    
+    # Создаем кнопку WebApp, если URL указан
+    if webapp_url:
+        print(f"[DEBUG] Создаю кнопку WebApp с URL: {webapp_url}")
+        keyboard = [
+            [InlineKeyboardButton("🌐 Открыть мини-приложение", web_app=WebAppInfo(url=webapp_url))]
+        ]
+        return InlineKeyboardMarkup(keyboard)
+    else:
+        print("[DEBUG] WEBAPP_URL не найден, кнопка WebApp не будет создана")
+        return None
 
 

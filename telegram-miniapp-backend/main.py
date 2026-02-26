@@ -246,7 +246,7 @@ async def mini_app(request: Request, raffle_id: Optional[int] = None):
     }
 
     # Рендерим HTML шаблон
-    return templates.TemplateResponse("index.html", context)
+    return templates.TemplateResponse("check.html", context)
 
 
 # API для проверки подписки пользователя
@@ -366,11 +366,18 @@ async def participate(request: Request):
                         }
                     )
 
-                # Добавляем участника
+                # Подсчитываем количество билетов пользователя
+                tickets_query = text("""
+                    SELECT COUNT(*) FROM tickets WHERE user_id = :user_id
+                """)
+                tickets_result = db.execute(tickets_query, {"user_id": user_id})
+                tickets_count = tickets_result.scalar() or 1  # Минимум 1 билет
+                
+                # Добавляем участника с учетом билетов
                 insert_query = text("""
                     INSERT INTO participants 
-                    (raffle_id, user_id, username, first_name, last_name, joined_at)
-                    VALUES (:raffle_id, :user_id, :username, :first_name, :last_name, NOW())
+                    (raffle_id, user_id, username, first_name, last_name, tickets_count, joined_at)
+                    VALUES (:raffle_id, :user_id, :username, :first_name, :last_name, :tickets_count, NOW())
                 """)
 
                 db.execute(insert_query, {
@@ -378,7 +385,8 @@ async def participate(request: Request):
                     "user_id": user_id,
                     "username": user_data.get('username'),
                     "first_name": user_data.get('first_name'),
-                    "last_name": user_data.get('last_name')
+                    "last_name": user_data.get('last_name'),
+                    "tickets_count": tickets_count
                 })
 
                 db.commit()

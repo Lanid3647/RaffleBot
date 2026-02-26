@@ -10,13 +10,17 @@ class BotUser(Base):
 
     id = Column(BigInteger, primary_key=True)
     telegram_id = Column(BigInteger, unique=True, nullable=False)
-    username = Column(String(255))
+    username = Column(String(255))  # Telegram никнейм пользователя (используется для регистрации)
     first_name = Column(String(255))
     last_name = Column(String(255))
     version = Column(String(20), default='basic')
     premium_until = Column(DateTime)
     is_admin = Column(Boolean, default=False)
     created_at = Column(DateTime, default=func.now())
+    referral_tickets = Column(Integer, default=0)  # Количество билетов за приглашения
+    # TODO: Добавить поле для хранения статуса прохождения капчи при регистрации
+    # captcha_passed = Column(Boolean, default=False)
+    # captcha_passed_at = Column(DateTime, nullable=True)
 
 
 class Channel_tg(Base):
@@ -54,26 +58,48 @@ class Raffle(Base):
     subscription_channels = Column(String(1000), nullable=True)
     luck_boost_enabled = Column(Boolean, default=False)
     captcha_enabled = Column(Boolean, default=False)
+    channel_messages = Column(Text, nullable=True)  # JSON с message_id постов в каналах: {"channel_id": message_id}
+    winners_selected = Column(Boolean, default=False)  # Флаг выбора победителей
+    completed_at = Column(DateTime, nullable=True)  # Время завершения
 
 
-"""class Participant(Base):
+class ReferralLink(Base):
+    __tablename__ = 'referral_links'
+
+    id = Column(Integer, primary_key=True)
+    referral_code = Column(String(100), unique=True, nullable=False)  # Уникальный код ссылки
+    creator_id = Column(BigInteger, ForeignKey('bot_users.telegram_id'), nullable=False)  # ID пользователя, создавшего ссылку
+    used_by_id = Column(BigInteger, ForeignKey('bot_users.telegram_id'), nullable=True)  # ID пользователя, использовавшего ссылку
+    is_used = Column(Boolean, default=False)  # Флаг использования (одноразовая ссылка)
+    created_at = Column(DateTime, default=func.now())
+    used_at = Column(DateTime, nullable=True)  # Время использования
+
+
+class Ticket(Base):
+    __tablename__ = 'tickets'
+
+    id = Column(Integer, primary_key=True)
+    user_id = Column(BigInteger, ForeignKey('bot_users.telegram_id'), nullable=False)  # ID пользователя-владельца билета
+    ticket_code = Column(String(20), unique=True, nullable=False)  # Уникальный код билета
+    source = Column(String(50), default='registration')  # Источник билета: 'registration', 'referral', 'notification', 'boost'
+    created_at = Column(DateTime, default=func.now())  # Время создания билета
+
+
+class Participant(Base):
     __tablename__ = 'participants'
 
     id = Column(Integer, primary_key=True, index=True)
     raffle_id = Column(Integer, ForeignKey('raffles.id'), nullable=False, index=True)
-    user_id = Column(BigInteger, nullable=False, index=True)
+    user_id = Column(BigInteger, ForeignKey('bot_users.telegram_id'), nullable=False, index=True)
     username = Column(String(255))
     first_name = Column(String(255))
     last_name = Column(String(255))
     tickets_count = Column(Integer, default=1)
-    referral_code = Column(String(300))
+    referral_code = Column(String(300), nullable=True)
     referral_count = Column(Integer, default=0)
     is_winner = Column(Boolean, default=False)
-    registration_date = Column(DateTime, default=datetime.utcnow)
-    joined_at = Column(DateTime, default=datetime.utcnow)
-
-    # Связи
-    raffle = relationship("Raffle", back_populates="participants")"""
+    registration_date = Column(DateTime, default=func.now())
+    joined_at = Column(DateTime, default=func.now())
 
 
 #  id SERIAL PRIMARY KEY, (уникальный номер)

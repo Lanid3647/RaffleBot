@@ -194,6 +194,97 @@ header.hero {
       color:white;
     }
 
+    /* Модальное окно для уведомлений */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.7);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 10000;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.3s ease, visibility 0.3s ease;
+    }
+
+    .modal-overlay.show {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .modal {
+      background: var(--panel);
+      border-radius: var(--card-radius);
+      padding: 24px;
+      max-width: 320px;
+      width: 90%;
+      text-align: center;
+      box-shadow: var(--shadow);
+      border: 2px solid var(--accent);
+      transform: scale(0.9);
+      transition: transform 0.3s ease;
+    }
+
+    .modal-overlay.show .modal {
+      transform: scale(1);
+    }
+
+    .modal-icon {
+      font-size: 48px;
+      margin-bottom: 16px;
+    }
+
+    .modal-title {
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 12px;
+    }
+
+    .modal-message {
+      font-size: 14px;
+      color: var(--muted);
+      line-height: 1.5;
+      margin-bottom: 20px;
+    }
+
+    .modal-link {
+      background: rgba(255, 191, 46, 0.1);
+      border: 1px solid var(--accent);
+      border-radius: 8px;
+      padding: 12px;
+      margin-bottom: 20px;
+      word-break: break-all;
+      font-size: 12px;
+      color: var(--accent);
+      font-family: monospace;
+    }
+
+    .modal-button {
+      background: var(--accent);
+      color: #000;
+      border: none;
+      border-radius: 8px;
+      padding: 12px 24px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      width: 100%;
+      transition: opacity 0.2s ease;
+    }
+
+    .modal-button:hover {
+      opacity: 0.9;
+    }
+
+    .modal-button:active {
+      opacity: 0.8;
+    }
+
 
 
 
@@ -322,7 +413,28 @@ header.hero {
     </main>
   </div>
 
+  <!-- Модальное окно для уведомлений -->
+  <div class="modal-overlay" id="modalOverlay">
+    <div class="modal">
+      <div class="modal-icon" id="modalIcon">✅</div>
+      <div class="modal-title" id="modalTitle">Ссылка скопирована!</div>
+      <div class="modal-message" id="modalMessage">Реферальная ссылка скопирована в буфер обмена</div>
+      <div class="modal-link" id="modalLink" style="display: none;"></div>
+      <button class="modal-button" id="modalButton">Понятно</button>
+    </div>
+  </div>
+
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <script>
+    // РАЗРЕШАЕМ ОТКРЫТИЕ DEVTOOLS
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'F12' || 
+          (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'J' || e.key === 'C')) ||
+          (e.ctrlKey && e.key === 'U')) {
+        return true;
+      }
+    }, false);
+    
     /* ============================
        JS: Telegram WebApp + UI
        - Инициализация Telegram.WebApp
@@ -347,6 +459,53 @@ header.hero {
       const boostBtn = document.getElementById('boost');
       const localSend = document.getElementById('localSend');
       const themeToggle = document.getElementById('themeToggle');
+      
+      // Элементы модального окна
+      const modalOverlay = document.getElementById('modalOverlay');
+      const modalIcon = document.getElementById('modalIcon');
+      const modalTitle = document.getElementById('modalTitle');
+      const modalMessage = document.getElementById('modalMessage');
+      const modalLink = document.getElementById('modalLink');
+      const modalButton = document.getElementById('modalButton');
+      
+      // Функция для показа модального окна
+      function showModal(icon, title, message, link = null) {
+        if (modalIcon) modalIcon.textContent = icon;
+        if (modalTitle) modalTitle.textContent = title;
+        if (modalMessage) modalMessage.textContent = message;
+        
+        if (link && modalLink) {
+          modalLink.textContent = link;
+          modalLink.style.display = 'block';
+        } else if (modalLink) {
+          modalLink.style.display = 'none';
+        }
+        
+        if (modalOverlay) {
+          modalOverlay.classList.add('show');
+        }
+      }
+      
+      // Функция для скрытия модального окна
+      function hideModal() {
+        if (modalOverlay) {
+          modalOverlay.classList.remove('show');
+        }
+      }
+      
+      // Закрытие модального окна по клику на кнопку
+      if (modalButton) {
+        modalButton.addEventListener('click', hideModal);
+      }
+      
+      // Закрытие модального окна по клику на overlay
+      if (modalOverlay) {
+        modalOverlay.addEventListener('click', (e) => {
+          if (e.target === modalOverlay) {
+            hideModal();
+          }
+        });
+      }
 
       // MAIN BUTTON text (Telegram)
       const MAIN_TEXT = "Получить билет";
@@ -355,9 +514,8 @@ header.hero {
       if (hasTG) {
         try {
           tg.ready();
-          tg.MainButton.setText(MAIN_TEXT);
-          tg.MainButton.show();
-          tg.onEvent('mainButtonClicked', onMainButtonClicked);
+          // Скрываем MainButton, так как он не нужен на этом экране
+          tg.MainButton.hide();
         } catch (e) {
           console.warn('Telegram init error', e);
         }
@@ -365,28 +523,152 @@ header.hero {
         console.log('Не внутри Telegram — локальный режим');
       }
 
-      // Простые обработчики карточек (замените на реальную логику)
-      inviteBtn.addEventListener('click', ()=> {
-        // В реальном приложении — открывайте ссылку приглашения или формируйте invite
-        alert('Приглашение друзей (замени на логику приглашения).');
-      });
-      notifyBtn.addEventListener('click', ()=> {
-        alert('Включение уведомлений (замени на реальную логику).');
-      });
-      boostBtn.addEventListener('click', ()=> {
-        alert('Буст (замени на серверную логику).');
-      });
+      // Обработчик кнопки пригласить друзей
+      if (inviteBtn) {
+        inviteBtn.addEventListener('click', async ()=> {
+          // Проверяем наличие Telegram WebApp
+          if (!hasTG || !tg) {
+            alert('Откройте приложение через Telegram для использования этой функции.');
+            return;
+          }
+          
+          // Инициализируем Telegram WebApp, если еще не инициализирован
+          try {
+            tg.ready();
+          } catch (e) {
+            console.warn('Ошибка при вызове tg.ready():', e);
+          }
+          
+          // Сначала проверяем наличие пользователя через initDataUnsafe
+          const telegramUser = tg.initDataUnsafe?.user;
+          if (!telegramUser || !telegramUser.id) {
+            console.error('Пользователь не найден в initDataUnsafe:', telegramUser);
+            alert('Не удалось получить данные пользователя из Telegram. Попробуйте обновить страницу.');
+            return;
+          }
+          
+          console.log('Пользователь найден:', telegramUser.id, telegramUser.username);
+          
+          // Получаем initData - может быть недоступен при использовании ngrok
+          let initData = tg.initData || '';
+          if (!initData && tg.initDataRaw) {
+            initData = tg.initDataRaw;
+          }
+          
+          // Также можно попробовать получить из window.location
+          if (!initData) {
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.has('tgWebAppData')) {
+              initData = urlParams.get('tgWebAppData');
+            }
+          }
+          
+          console.log('initData доступен:', !!initData, 'Длина:', initData ? initData.length : 0);
+          
+          // Если initData недоступен, но пользователь найден, продолжаем
+          // Сервер проверит пользователя по telegram_id
+          if (!initData || initData === '') {
+            console.warn('initData недоступен (возможно, из-за ngrok), но пользователь найден. Продолжаем.');
+          }
+          
+          try {
+            
+            // Показываем загрузку
+            inviteBtn.disabled = true;
+            const originalText = inviteBtn.querySelector('.text .title')?.textContent;
+            if (inviteBtn.querySelector('.text .title')) {
+              inviteBtn.querySelector('.text .title').textContent = 'Генерация ссылки...';
+            }
+            
+            // Запрашиваем реферальную ссылку
+            const response = await fetch('/api/referral/generate', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                init_data: initData || '',  // Отправляем пустую строку, если initData недоступен
+                telegram_id: telegramUser.id
+              })
+            });
+            
+            const data = await response.json();
+            
+            if (data.success && data.referral_link) {
+              // Копируем ссылку в буфер обмена
+              try {
+                await navigator.clipboard.writeText(data.referral_link);
+                
+                // Показываем красивое модальное окно
+                showModal(
+                  '✅',
+                  'Ссылка скопирована!',
+                  'Реферальная ссылка скопирована в буфер обмена. Поделитесь ссылкой с друзьями — за каждого нового пользователя вы получите 1 билет!',
+                  data.referral_link
+                );
+                
+                // Автоматически закрываем модальное окно через 3 секунды
+                setTimeout(() => {
+                  hideModal();
+                  // Убрано автоматическое открытие диалога пересылки
+                }, 3000);
+              } catch (clipboardError) {
+                console.error('Ошибка при копировании в буфер обмена:', clipboardError);
+                // Если не удалось скопировать, показываем модальное окно со ссылкой для ручного копирования
+                showModal(
+                  '📋',
+                  'Реферальная ссылка',
+                  'Скопируйте ссылку вручную:',
+                  data.referral_link
+                );
+              }
+            } else {
+              showModal(
+                '❌',
+                'Ошибка',
+                'Ошибка при создании ссылки: ' + (data.message || 'Неизвестная ошибка')
+              );
+            }
+          } catch (error) {
+            console.error('Ошибка при создании реферальной ссылки:', error);
+            showModal(
+              '❌',
+              'Ошибка',
+              'Ошибка при создании ссылки. Попробуйте позже.'
+            );
+          } finally {
+            inviteBtn.disabled = false;
+            if (inviteBtn.querySelector('.text .title') && originalText) {
+              inviteBtn.querySelector('.text .title').textContent = originalText;
+            }
+          }
+        });
+      }
+      if (notifyBtn) {
+        notifyBtn.addEventListener('click', ()=> {
+          alert('Включение уведомлений (замени на реальную логику).');
+        });
+      }
+      if (boostBtn) {
+        boostBtn.addEventListener('click', ()=> {
+          alert('Буст (замени на серверную логику).');
+        });
+      }
 
       // Локальная отправка (для теста вне Telegram)
-      localSend.addEventListener('click', ()=> {
-        sendPayload(false);
-      });
+      if (localSend) {
+        localSend.addEventListener('click', ()=> {
+          sendPayload(false);
+        });
+      }
 
       // Тема (переключение светлой/тёмной — просто пример)
-      themeToggle.addEventListener('click', ()=> {
-        const isLight = document.documentElement.classList.toggle('light');
-        themeToggle.setAttribute('aria-pressed', String(isLight));
-      });
+      if (themeToggle) {
+        themeToggle.addEventListener('click', ()=> {
+          const isLight = document.documentElement.classList.toggle('light');
+          themeToggle.setAttribute('aria-pressed', String(isLight));
+        });
+      }
 
       // Отправка данных (через tg.sendData если в Telegram)
       function onMainButtonClicked(){
@@ -468,6 +750,12 @@ header.hero {
         }
       })();
     })();
+
+    // Переход на следующий экран через 3 секунды
+    const screenSwitchDelay = {{ screen_switch_delay|default(3000) }};
+    setTimeout(() => {
+      window.location.href = '/create4';
+    }, screenSwitchDelay);
   </script>
 </body>
 </html>

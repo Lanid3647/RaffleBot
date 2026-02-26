@@ -1,0 +1,1193 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
+  <title>Розыгрыш — Мини-приложение (Telegram Web App)</title>
+
+  <!-- Шрифт: Inter (можно заменить) -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    /* =========================
+       Переменные темы — подгоняйте под макет
+       ========================= */
+    :root{
+      --bg: #070707;            /* основной фон (чёрный) */
+      --panel: #222222;         /* фон карточек/панелей */
+      --muted: #9aa0a6;         /* вспомогательный текст */
+      --text: #ffffff;          /* основной текст */
+      --accent: #FFBF2E;        /* жёлтый акцент (кнопки/бордеры) */
+      --accent-strong: #F7B500; /* насыщенный жёлтый */
+      --card-radius: 14px;
+      --gap: 16px;
+      --shadow: 0 8px 28px rgba(0,0,0,0.6);
+    }
+
+    /* Сбросы */
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      font-family:"Inter",system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial;
+      background:var(--bg);
+      color:var(--text);
+      -webkit-font-smoothing:antialiased;
+      -moz-osx-font-smoothing:grayscale;
+      padding:env(safe-area-inset-top) 16px env(safe-area-inset-bottom);
+      -webkit-touch-callout:none;
+    }
+
+    /* Главный контейнер (мобильный-first) */
+    .app{
+      max-width:420px;
+      margin:0 auto;
+      padding:20px 0;
+    }
+/* Header / Hero */
+/* Header / Hero */
+header.hero {
+  background: linear-gradient(180deg, rgba(255,255,255,0.02), transparent);
+  padding: 22px 15px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center; /* Логотип и текст на одной линии */
+  gap: 0px; /* Расстояние между логотипом и текстом */
+  margin-bottom: -4px;
+}
+
+/* Логотип - нормальный размер */
+.logo {
+  width: 170px; /* Хороший размер, не огромный */
+  height: 170px;
+  border-radius: 15px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 170px; /* Фиксированная ширина */
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  background: transparent;
+
+}
+
+/* Картинка внутри логотипа */
+.logo img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+
+/* Текст - занимает оставшееся пространство */
+.hero-text {
+  flex: 1; /* Занимает все оставшееся пространство */
+  text-align: center; /* Текст прижат к левой стороне */
+
+}
+
+.hero-text h1 {
+  margin: 0;
+  font-size: 20px;
+  line-height: 1.0;
+  font-weight: 300; /* Нормальная жирность */
+  color: var(--text);
+  text-align: center; /* Текст слева */
+}
+
+.hero-text p {
+  margin: 8px 0 0 0;
+  color: var(--muted);
+  font-size: 14px;
+  text-align: center; /* Текст слева */
+  line-height: 1.4;
+}
+
+    /* Трофей справа (маленький) */
+    .hero .trophy {
+      width:80px;
+      height:80px;
+      flex:0 0 80px;
+    }
+
+    /* Таймер */
+    .timer-wrap{
+      display:flex;
+      justify-content:center;
+      margin:0 -4px 20px -4px;
+    }
+    .timer {
+      background:#2e2e2e;
+      padding:14px 26px;
+      border-radius:22px;
+      min-width:220px;
+      text-align:center;
+      box-shadow:0 6px 18px rgba(0,0,0,0.6);
+      border:0.5px solid #dbdbdb;
+    }
+    .timer .time {
+      font-family: 'Roboto Mono', monospace;
+      font-weight:700;
+      color:var(--accent);
+      font-size:18px;
+    }
+    .timer .caption {
+      display:block;
+      margin-top:6px;
+      font-size:13px;
+      color:#aaa6a6;
+    }
+
+    /* Список действий (карточки с рамкой) */
+    .actions {
+      display:grid;
+      gap:30px;
+      margin-bottom:40px;
+      margin-top:40px;
+
+    }
+    .action {
+      display:flex;
+      gap:14px;
+      align-items:center;
+      padding:8px;
+      border-radius:0px;
+      background:#2e2e2e;
+      border:2px solid #ffca1d; /* тонкая жёлтая рамка */
+      cursor:pointer;
+      transition:transform .08s ease, box-shadow .08s ease;
+      justify-content: flex-start; /* Выравнивание содержимого по левому краю */
+      text-align: left; /* Для текста внутри */
+    }
+    .action:active{transform:translateY(1px)}
+    .action .icon {
+      width: 48px;
+      height: 48px;
+      min-width: 48px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      /* Убираем желтую рамку и фон: */
+      background: transparent;
+      border: none;
+      /* Для изображений: */
+      overflow: hidden;
+    }
+    .action .icon img {
+      width: 75%;
+      height: 75%;
+      object-fit: contain;
+      display: block;
+    }
+    .action .text {
+      flex:1;
+      color: white;
+    }
+    .action .title {
+      font-weight:700;
+      font-size:20px;
+      margin-bottom:4px;
+    }
+    .action .desc {
+      font-size:13px;
+      color:white;
+    }
+
+    /* Модальное окно для уведомлений */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.7);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 10000;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.3s ease, visibility 0.3s ease;
+    }
+
+    .modal-overlay.show {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .modal {
+      background: var(--panel);
+      border-radius: var(--card-radius);
+      padding: 24px;
+      max-width: 320px;
+      width: 90%;
+      text-align: center;
+      box-shadow: var(--shadow);
+      border: 2px solid var(--accent);
+      transform: scale(0.9);
+      transition: transform 0.3s ease;
+    }
+
+    .modal-overlay.show .modal {
+      transform: scale(1);
+    }
+
+    .modal-icon {
+      font-size: 48px;
+      margin-bottom: 16px;
+    }
+
+    .modal-title {
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 12px;
+    }
+
+    .modal-message {
+      font-size: 14px;
+      color: var(--muted);
+      line-height: 1.5;
+      margin-bottom: 20px;
+    }
+
+    .modal-link {
+      background: rgba(255, 191, 46, 0.1);
+      border: 1px solid var(--accent);
+      border-radius: 8px;
+      padding: 12px;
+      margin-bottom: 20px;
+      word-break: break-all;
+      font-size: 12px;
+      color: var(--accent);
+      font-family: monospace;
+    }
+
+    .modal-button {
+      background: var(--accent);
+      color: #000;
+      border: none;
+      border-radius: 8px;
+      padding: 12px 24px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      width: 100%;
+      transition: opacity 0.2s ease;
+    }
+
+    .modal-button:hover {
+      opacity: 0.9;
+    }
+
+    .modal-button:active {
+      opacity: 0.8;
+    }
+
+
+
+
+    /* Секция билетов */
+    .tickets {
+      background:#2e2e2e;
+      border-radius:4px;
+      padding:16px;
+      box-shadow:var(--shadow);
+      margin-bottom:24px;
+    }
+    .tickets h2 {
+      margin:0 0 12px 0;
+      font-size:20px;
+      font-weight:700;
+      color: white;
+    }
+
+    .ticket-wrap {
+      background:#2e2e2e;
+      border-radius:12px;
+      padding:18px;
+      display:flex;
+      flex-direction: column;
+      gap: 12px;
+      justify-content:center;
+      align-items:center;
+    }
+
+    .ticket-pill {
+      width:100%;
+      max-width:340px;
+      background:#ffc100;
+      color:black;
+      padding:12px 18px;
+      border-radius:20px;
+      font-weight:800;
+      text-align:center;
+      box-shadow:0 8px 18px rgba(247,181,0,0.12);
+      border:1px solid white;
+      font-size:18px;
+    }
+    .ticket-pill small{
+      display:block;
+      font-weight:700;
+      margin-top:8px;
+      font-size:14px;
+      color:black;
+    }
+
+    /* Контролы (локальные) */
+    .controls {
+      display:flex;
+      gap:10px;
+      justify-content:space-between;
+      align-items:center;
+    }
+    .btn {
+      border-radius:10px;
+      padding:10px 12px;
+      font-weight:700;
+      cursor:pointer;
+      border:none;
+    }
+    .btn-ghost{
+      background:transparent;
+      color:var(--muted);
+      border:1px solid rgba(255,255,255,0.04);
+    }
+    .btn-primary{
+      background:var(--accent);
+      color:var(--bg);
+    }
+
+    /* Адаптив */
+    @media (max-width:360px){
+      .logo{width:50px;height:50px}
+      .hero .trophy{display:none}
+      .timer{min-width:150px}
+      .ticket-pill{max-width:300px}
+    }
+
+
+
+  </style>
+</head>
+<body>
+
+  <div class="app" role="application" aria-labelledby="appTitle">
+    <header class="hero" role="banner">
+
+
+      <div class="hero-text">
+        <h1 id="appTitle">Вы участвуете в<br> розыгрыше!</h1>
+        <p>Не отписывайтесь от каналов до окончания розыгрыша!</p>
+      </div>
+
+        <div class="logo" aria-hidden="true">
+          <img src="/static/images/logo.png" alt="Иконка">
+      </div>
+
+      </svg>
+    </header>
+
+    <main>
+      <!-- Таймер -->
+      <div class="timer-wrap" aria-live="polite">
+        <div class="timer" role="status" aria-atomic="true">
+          <div class="time" id="timer">00:10:00</div>
+          <span class="caption">До окончания розыгрыша</span>
+        </div>
+      </div>
+
+        <!-- кнопка проверить подписки-->
+      <!-- Действия -->
+      <section class="actions" aria-label="Действия">
+        <button class="action" id="invite" aria-describedby="invite-desc">
+          <div class="icon" aria-hidden="true"><img src="/static/images/add.png" alt="Пригласить"></div>
+          <div class="text">
+            <div class="title">Пригласить друзей</div>
+            <div id="invite-desc" class="desc">Получи дополнительный билет</div>
+          </div>
+        </button>
+
+        <!-- Временно скрыто -->
+        <button class="action" id="notify" aria-describedby="notify-desc" style="display: none;">
+          <div class="icon" aria-hidden="true"><img src="/static/images/bell.png" alt="Пригласить"></div>
+          <div class="text">
+            <div class="title">Включи уведомления</div>
+            <div id="notify-desc" class="desc">Получи дополнительный билет</div>
+          </div>
+        </button>
+
+        <!-- Временно скрыто -->
+        <button class="action" id="boost" aria-describedby="boost-desc" style="display: none;">
+          <div class="icon" aria-hidden="true"><img src="/static/images/бриллиант.png" alt="Пригласить"></div>
+          <div class="text">
+            <div class="title">Буст</div>
+            <div id="boost-desc" class="desc">Получи дополнительный билет</div>
+          </div>
+        </button>
+      </section>
+
+      <!-- Билеты -->
+      <section class="tickets" aria-labelledby="ticketsTitle">
+        <h2 id="ticketsTitle">Ваши билеты</h2>
+
+        <div class="ticket-wrap" id="ticketWrap" aria-live="polite">
+          <!-- Билеты будут добавлены динамически через JavaScript -->
+          <div class="ticket-pill" id="ticketPill" style="display: none;">
+            <div>Билет: <strong class="ticket-code">PPMPO</strong></div>
+            <small class="ticket-time">Получен: 13:30 12.12.2025</small>
+          </div>
+        </div>
+      </section>
+
+
+    </main>
+  </div>
+
+  <!-- Модальное окно для уведомлений -->
+  <div class="modal-overlay" id="modalOverlay">
+    <div class="modal">
+      <div class="modal-icon" id="modalIcon">✅</div>
+      <div class="modal-title" id="modalTitle">Ссылка скопирована!</div>
+      <div class="modal-message" id="modalMessage">Реферальная ссылка скопирована в буфер обмена</div>
+      <div class="modal-link" id="modalLink" style="display: none;"></div>
+      <button class="modal-button" id="modalButton">Понятно</button>
+    </div>
+  </div>
+
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <script>
+    // РАЗРЕШАЕМ ОТКРЫТИЕ DEVTOOLS - убираем любую защиту
+    document.addEventListener('keydown', function(e) {
+      // Разрешаем F12, Ctrl+Shift+I, Ctrl+Shift+J, Ctrl+U
+      if (e.key === 'F12' || 
+          (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'J' || e.key === 'C')) ||
+          (e.ctrlKey && e.key === 'U')) {
+        return true; // Не блокируем
+      }
+    }, false);
+    
+    /* ============================
+       JS: Telegram WebApp + UI
+       - Инициализация Telegram.WebApp
+       - MainButton: установка текста и отправка payload
+       - Локальная отладка (кнопка)
+       - Таймер обратного отсчёта (по умолчанию 10 минут)
+       ============================ */
+
+    (function(){
+      // --- Конфиг ---
+      const DEFAULT_SECONDS = 10 * 60; // 10 минут (600 секунд)
+      let remaining = DEFAULT_SECONDS;
+
+      // Telegram WebApp объект (если запущено внутри Telegram)
+      const hasTG = !!(window.Telegram && window.Telegram.WebApp);
+      const tg = hasTG ? window.Telegram.WebApp : null;
+
+      // Элементы UI
+      let timerEl = document.getElementById('timer');
+      const inviteBtn = document.getElementById('invite');
+      const notifyBtn = document.getElementById('notify');
+      const boostBtn = document.getElementById('boost');
+      const localSend = document.getElementById('localSend');
+      const themeToggle = document.getElementById('themeToggle');
+      
+      // Элементы модального окна
+      const modalOverlay = document.getElementById('modalOverlay');
+      const modalIcon = document.getElementById('modalIcon');
+      const modalTitle = document.getElementById('modalTitle');
+      const modalMessage = document.getElementById('modalMessage');
+      const modalLink = document.getElementById('modalLink');
+      const modalButton = document.getElementById('modalButton');
+      
+      // Функция для показа модального окна
+      function showModal(icon, title, message, link = null) {
+        modalIcon.textContent = icon;
+        modalTitle.textContent = title;
+        modalMessage.textContent = message;
+        
+        if (link) {
+          modalLink.textContent = link;
+          modalLink.style.display = 'block';
+        } else {
+          modalLink.style.display = 'none';
+        }
+        
+        modalOverlay.classList.add('show');
+      }
+      
+      // Функция для скрытия модального окна
+      function hideModal() {
+        modalOverlay.classList.remove('show');
+      }
+      
+      // Закрытие модального окна по клику на кнопку
+      if (modalButton) {
+        modalButton.addEventListener('click', hideModal);
+      }
+      
+      // Закрытие модального окна по клику на overlay
+      if (modalOverlay) {
+        modalOverlay.addEventListener('click', (e) => {
+          if (e.target === modalOverlay) {
+            hideModal();
+          }
+        });
+      }
+
+      // MAIN BUTTON text (Telegram)
+      const MAIN_TEXT = "Получить билет";
+
+      // Инициализация Telegram WebApp
+      if (hasTG) {
+        try {
+          tg.ready();
+          // Скрываем MainButton, так как он не нужен на этом экране
+          tg.MainButton.hide();
+          console.log('✅ Telegram WebApp инициализирован');
+          
+          // Принудительная загрузка билетов после инициализации
+          setTimeout(() => {
+            console.log('🔄 Принудительная загрузка билетов после инициализации Telegram WebApp');
+            if (tg.initDataUnsafe?.user) {
+              console.log('✅ Пользователь найден, загружаем билеты...');
+              loadUserTickets();
+            } else {
+              console.warn('⚠️ Пользователь еще не загружен в initDataUnsafe, пробуем через 2 секунды...');
+              setTimeout(() => {
+                if (tg.initDataUnsafe?.user) {
+                  console.log('✅ Пользователь загружен, загружаем билеты...');
+                  loadUserTickets();
+                } else {
+                  console.error('❌ Пользователь так и не загрузился');
+                }
+              }, 2000);
+            }
+          }, 1000);
+        } catch (e) {
+          console.warn('Telegram init error', e);
+        }
+      } else {
+        console.log('Не внутри Telegram — локальный режим');
+      }
+      
+      // Принудительная загрузка билетов после инициализации Telegram WebApp
+      // Используем событие ready от Telegram WebApp
+      if (hasTG && tg) {
+        tg.ready();
+        // Ждем немного и загружаем билеты
+        setTimeout(() => {
+          console.log('Принудительная загрузка билетов после инициализации');
+          if (tg.initDataUnsafe?.user) {
+            loadUserTickets();
+          } else {
+            console.warn('Пользователь еще не загружен в initDataUnsafe');
+          }
+        }, 1000);
+      }
+
+      // Обработчик кнопки пригласить друзей
+      if (inviteBtn) {
+        inviteBtn.addEventListener('click', async ()=> {
+        // Диагностика
+        console.log('hasTG:', hasTG);
+        console.log('tg:', tg);
+        console.log('window.Telegram:', window.Telegram);
+        
+        // Проверяем наличие Telegram WebApp
+        if (!hasTG || !tg) {
+          console.error('Telegram WebApp не доступен. hasTG:', hasTG, 'tg:', tg);
+          alert('Откройте приложение через Telegram для использования этой функции.');
+          return;
+        }
+        
+        // Инициализируем Telegram WebApp, если еще не инициализирован
+        try {
+          tg.ready();
+        } catch (e) {
+          console.warn('Ошибка при вызове tg.ready():', e);
+        }
+        
+        // Сначала проверяем наличие пользователя через initDataUnsafe
+        const telegramUser = tg.initDataUnsafe?.user;
+        if (!telegramUser || !telegramUser.id) {
+          console.error('Пользователь не найден в initDataUnsafe:', telegramUser);
+          alert('Не удалось получить данные пользователя из Telegram. Попробуйте обновить страницу.');
+          return;
+        }
+        
+        console.log('Пользователь найден:', telegramUser.id, telegramUser.username);
+        
+        // Получаем initData - может быть недоступен при использовании ngrok или в некоторых случаях
+        let initData = tg.initData || '';
+        if (!initData && tg.initDataRaw) {
+          initData = tg.initDataRaw;
+        }
+        
+        // Также можно попробовать получить из window.location
+        if (!initData) {
+          const urlParams = new URLSearchParams(window.location.search);
+          if (urlParams.has('tgWebAppData')) {
+            initData = urlParams.get('tgWebAppData');
+          }
+        }
+        
+        console.log('initData доступен:', !!initData, 'Длина:', initData ? initData.length : 0);
+        
+        // Если initData недоступен, но пользователь найден, продолжаем
+        // Сервер проверит пользователя по telegram_id
+        if (!initData || initData === '') {
+          console.warn('initData недоступен (возможно, из-за ngrok), но пользователь найден. Продолжаем.');
+        }
+        
+        try {
+          
+          // Показываем загрузку
+          inviteBtn.disabled = true;
+          const originalText = inviteBtn.querySelector('.text .title').textContent;
+          inviteBtn.querySelector('.text .title').textContent = 'Генерация ссылки...';
+          
+          // Запрашиваем реферальную ссылку
+          const response = await fetch('/api/referral/generate', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              init_data: initData || '',  // Отправляем пустую строку, если initData недоступен
+              telegram_id: telegramUser.id
+            })
+          });
+          
+          const data = await response.json();
+          
+          if (data.success && data.referral_link) {
+            // Копируем ссылку в буфер обмена
+            try {
+              await navigator.clipboard.writeText(data.referral_link);
+              
+              // Показываем красивое модальное окно
+              showModal(
+                '✅',
+                'Ссылка скопирована!',
+                'Реферальная ссылка скопирована в буфер обмена. Поделитесь ссылкой с друзьями — за каждого нового пользователя вы получите 1 билет!',
+                data.referral_link
+              );
+              
+              // Автоматически закрываем модальное окно через 3 секунды
+              setTimeout(() => {
+                hideModal();
+                // Убрано автоматическое открытие диалога пересылки
+              }, 3000);
+              
+              // Обновляем билеты после приглашения (на случай, если друг уже перешел по ссылке)
+              setTimeout(() => {
+                console.log('🔄 Обновление билетов после приглашения друга...');
+                loadUserTickets();
+              }, 2000);
+            } catch (clipboardError) {
+              console.error('Ошибка при копировании в буфер обмена:', clipboardError);
+              // Если не удалось скопировать, показываем модальное окно со ссылкой для ручного копирования
+              showModal(
+                '📋',
+                'Реферальная ссылка',
+                'Скопируйте ссылку вручную:',
+                data.referral_link
+              );
+            }
+          } else {
+            showModal(
+              '❌',
+              'Ошибка',
+              'Ошибка при создании ссылки: ' + (data.message || 'Неизвестная ошибка')
+            );
+          }
+        } catch (error) {
+          console.error('Ошибка при создании реферальной ссылки:', error);
+          showModal(
+            '❌',
+            'Ошибка',
+            'Ошибка при создании ссылки. Попробуйте позже.'
+          );
+        } finally {
+          if (inviteBtn) {
+            inviteBtn.disabled = false;
+            if (inviteBtn.querySelector('.text .title')) {
+              inviteBtn.querySelector('.text .title').textContent = originalText || 'Пригласить друзей';
+            }
+          }
+        }
+      });
+      }
+      if (notifyBtn) {
+        notifyBtn.addEventListener('click', ()=> {
+          alert('Включение уведомлений (замени на реальную логику).');
+        });
+      }
+      if (boostBtn) {
+        boostBtn.addEventListener('click', ()=> {
+          alert('Буст (замени на серверную логику).');
+        });
+      }
+
+      // Локальная отправка (для теста вне Telegram)
+      if (localSend) {
+        localSend.addEventListener('click', ()=> {
+          sendPayload(false);
+        });
+      }
+
+      // Тема (переключение светлой/тёмной — просто пример)
+      if (themeToggle) {
+        themeToggle.addEventListener('click', ()=> {
+          const isLight = document.documentElement.classList.toggle('light');
+          themeToggle.setAttribute('aria-pressed', String(isLight));
+        });
+      }
+
+      // Отправка данных (через tg.sendData если в Telegram)
+      function onMainButtonClicked(){
+        sendPayload(true);
+      }
+
+      function sendPayload(fromTelegram){
+        // Соберите реальную полезную нагрузку (например: userId, actions, ticketId и т.д.)
+        const payload = {
+          action: 'get_ticket',
+          ts: new Date().toISOString(),
+          invited: false,
+          notifications: false,
+          boost: false,
+          // Можно добавить initDataUnsafe если нужно
+        };
+
+        if (fromTelegram && hasTG) {
+          try {
+            tg.sendData(JSON.stringify(payload));
+            tg.MainButton.setText('Отправлено');
+            setTimeout(()=>{ try { tg.close(); } catch(e){} }, 700);
+          } catch (e) {
+            console.error('Ошибка отправки в Telegram', e);
+            alert('Не удалось отправить данные в Telegram.');
+          }
+        } else {
+          console.log('Payload (локально):', payload);
+          alert('Данные подготовлены локально. Проверьте консоль.');
+        }
+      }
+
+      // Таймер - запускается с момента открытия миниприложения
+      let timerInterval = null;
+      let timerRemaining = DEFAULT_SECONDS;
+      
+      function startTimer(seconds){
+        console.log('🚀 startTimer вызван с параметром:', seconds);
+        
+        // Находим элемент таймера заново на всякий случай
+        const timerElement = document.getElementById('timer');
+        if (!timerElement) {
+          console.error('❌ Элемент таймера не найден!');
+          return;
+        }
+        
+        // Останавливаем предыдущий интервал, если есть
+        if (timerInterval) {
+          clearInterval(timerInterval);
+          timerInterval = null;
+        }
+        
+        // Устанавливаем начальное значение
+        timerRemaining = Math.max(0, seconds);
+        console.log(`⏱️ Таймер запущен: ${timerRemaining} секунд (${Math.floor(timerRemaining / 60)} минут)`);
+        
+        // Сразу отображаем начальное время
+        renderTime(timerRemaining);
+        
+        // Запускаем интервал обновления
+        console.log('🔄 Создание интервала таймера...');
+        timerInterval = setInterval(() => {
+          timerRemaining--;
+          
+          if (timerRemaining <= 0) {
+            clearInterval(timerInterval);
+            timerInterval = null;
+            renderTime(0);
+            onTimerEnd();
+            console.log('⏱️ Таймер завершен');
+            return;
+          }
+          
+          renderTime(timerRemaining);
+        }, 1000);
+        
+        console.log('✅ Интервал таймера запущен, interval ID:', timerInterval);
+        
+        // Проверка через 2 секунды
+        setTimeout(() => {
+          if (timerInterval && timerRemaining > 0) {
+            console.log(`✅ Таймер работает! Осталось: ${timerRemaining} секунд`);
+          } else if (!timerInterval) {
+            console.error('❌ Интервал таймера не запущен!');
+          }
+        }, 2000);
+      }
+
+      function renderTime(s){
+        const timerElement = document.getElementById('timer');
+        if (!timerElement) {
+          console.error('❌ Элемент таймера не найден при рендеринге!');
+          return;
+        }
+        
+        const h = Math.floor(s/3600);
+        const m = Math.floor((s%3600)/60);
+        const sec = s%60;
+        const parts = [];
+        if (h>0) parts.push(String(h).padStart(2,'0'));
+        parts.push(String(m).padStart(2,'0'));
+        parts.push(String(sec).padStart(2,'0'));
+        const timeString = parts.join(':');
+        timerElement.textContent = timeString;
+      }
+
+      function onTimerEnd(){
+        timerEl.textContent = '00:00:00';
+        if (hasTG){
+          try { tg.MainButton.setText('Розыгрыш завершён'); tg.MainButton.disable(); } catch(e){}
+        }
+        // Доп. логика по окончании (показать уведомление/обновить UI)
+      }
+
+      // Функция для отображения всех билетов
+      function renderTickets(tickets) {
+        const ticketWrap = document.getElementById('ticketWrap');
+        if (!ticketWrap) {
+          console.error('❌ Контейнер билетов не найден');
+          return;
+        }
+        
+        // Очищаем контейнер
+        ticketWrap.innerHTML = '';
+        
+        // Создаем элементы для каждого билета
+        tickets.forEach((ticket, index) => {
+          const ticketPill = document.createElement('div');
+          ticketPill.className = 'ticket-pill';
+          
+          const codeEl = document.createElement('div');
+          codeEl.innerHTML = `Билет: <strong class="ticket-code">${ticket.ticket_code}</strong>`;
+          
+          const timeEl = document.createElement('small');
+          timeEl.className = 'ticket-time';
+          timeEl.textContent = `Получен: ${ticket.created_at}`;
+          
+          ticketPill.appendChild(codeEl);
+          ticketPill.appendChild(timeEl);
+          
+          ticketWrap.appendChild(ticketPill);
+          
+          console.log(`✅ Билет ${index + 1} отображен: ${ticket.ticket_code}`);
+        });
+        
+        console.log(`✅ Всего отображено билетов: ${tickets.length}`);
+      }
+
+      // Загрузка билетов пользователя
+      async function loadUserTickets() {
+        console.log('=== НАЧАЛО ЗАГРУЗКИ БИЛЕТОВ ===');
+        console.log('hasTG:', hasTG);
+        console.log('tg:', tg);
+        
+        // Проверяем наличие Telegram WebApp
+        if (!hasTG || !tg) {
+          console.error('❌ Telegram WebApp не доступен, билеты не будут загружены');
+          return;
+        }
+        
+        console.log('✅ Telegram WebApp доступен');
+        console.log('tg.initDataUnsafe:', tg.initDataUnsafe);
+        console.log('tg.initDataUnsafe?.user:', tg.initDataUnsafe?.user);
+        
+        // Проверяем наличие пользователя
+        const telegramUser = tg.initDataUnsafe?.user;
+        if (!telegramUser || !telegramUser.id) {
+          console.error('❌ Не удалось получить данные пользователя из Telegram');
+          console.log('tg.initDataUnsafe?.user:', tg.initDataUnsafe?.user);
+          return;
+        }
+        
+        const telegramId = telegramUser.id;
+        console.log('✅ Загрузка билетов для пользователя:', telegramId);
+        console.log('Продолжаем выполнение функции loadUserTickets...');
+        
+        try {
+          // Получаем initData для проверки (опционально)
+          let initData = tg.initData || '';
+          if (!initData && tg.initDataRaw) {
+            initData = tg.initDataRaw;
+          }
+          
+          // Формируем URL с параметрами
+          let url = `/api/tickets?telegram_id=${telegramId}`;
+          if (initData) {
+            url += `&init_data=${encodeURIComponent(initData)}`;
+          }
+          
+          console.log('📤 Отправка запроса билетов:', url);
+          console.log('Telegram ID:', telegramId);
+          console.log('InitData доступен:', !!initData);
+          console.log('Длина initData:', initData ? initData.length : 0);
+          
+          const fetchStartTime = Date.now();
+          const response = await fetch(url, {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json',
+            }
+          });
+          const fetchEndTime = Date.now();
+          
+          console.log(`✅ Ответ получен за ${fetchEndTime - fetchStartTime}ms, статус:`, response.status);
+          
+          if (!response.ok) {
+            console.error('❌ Ошибка HTTP при загрузке билетов:', response.status, response.statusText);
+            const errorText = await response.text();
+            console.error('Текст ошибки:', errorText);
+            return;
+          }
+          
+          const data = await response.json();
+          console.log('✅ Ответ сервера получен:', data);
+          console.log('Количество билетов:', data.tickets?.length || 0);
+          
+          if (data.success && data.tickets && data.tickets.length > 0) {
+            // Отображаем все билеты
+            console.log(`✅ Найдено билетов: ${data.tickets.length}`);
+            renderTickets(data.tickets);
+          } else {
+            console.warn('Билеты не найдены. Ответ сервера:', data);
+            // Очищаем контейнер билетов
+            const ticketWrap = document.getElementById('ticketWrap');
+            if (ticketWrap) {
+              ticketWrap.innerHTML = '<div class="ticket-pill" style="opacity: 0.6;"><div>Нет билетов</div></div>';
+            }
+          }
+        } catch (error) {
+          console.error('Ошибка при загрузке билетов:', error);
+          // При ошибке показываем сообщение об ошибке
+          const ticketWrap = document.getElementById('ticketWrap');
+          if (ticketWrap) {
+            ticketWrap.innerHTML = '<div class="ticket-pill" style="opacity: 0.6;"><div>Ошибка загрузки</div><small>Не удалось загрузить билеты</small></div>';
+          }
+        }
+      }
+      
+      // Автоматическое обновление билетов каждые 30 секунд
+      let ticketsRefreshInterval = null;
+      function startTicketsAutoRefresh() {
+        // Очищаем предыдущий интервал, если есть
+        if (ticketsRefreshInterval) {
+          clearInterval(ticketsRefreshInterval);
+        }
+        
+        // Обновляем билеты каждые 30 секунд
+        ticketsRefreshInterval = setInterval(() => {
+          console.log('🔄 Автоматическое обновление билетов...');
+          loadUserTickets();
+        }, 30000); // 30 секунд
+        
+        console.log('✅ Автоматическое обновление билетов запущено (каждые 30 секунд)');
+      }
+      
+      function stopTicketsAutoRefresh() {
+        if (ticketsRefreshInterval) {
+          clearInterval(ticketsRefreshInterval);
+          ticketsRefreshInterval = null;
+          console.log('⏹️ Автоматическое обновление билетов остановлено');
+        }
+      }
+
+      // Функция инициализации таймера
+      function initTimer() {
+        const timerElement = document.getElementById('timer');
+        if (!timerElement) {
+          console.error('❌ Элемент таймера не найден при инициализации!');
+          return false;
+        }
+        
+        console.log('🚀 Запуск таймера розыгрыша с момента открытия миниприложения');
+        console.log('✅ Элемент таймера найден:', timerElement);
+        
+        try {
+          const p = new URLSearchParams(location.search);
+          const s = p.get('seconds');
+          if (s && !isNaN(Number(s))) {
+            console.log(`⏱️ Запуск таймера с параметром из URL: ${s} секунд`);
+            startTimer(Number(s));
+          } else {
+            console.log(`⏱️ Запуск таймера по умолчанию: ${DEFAULT_SECONDS} секунд (${DEFAULT_SECONDS / 60} минут)`);
+            startTimer(DEFAULT_SECONDS);
+          }
+          return true;
+        } catch(e){
+          console.error('❌ Ошибка при инициализации таймера:', e);
+          console.log(`⏱️ Запуск таймера по умолчанию (ошибка парсинга URL): ${DEFAULT_SECONDS} секунд`);
+          startTimer(DEFAULT_SECONDS);
+          return true;
+        }
+      }
+
+      // Инициализация: таймер запускается сразу при загрузке страницы
+      // Можно передать seconds через ?seconds=NN в URL (удобно для тестов)
+      (function init(){
+        console.log('🔧 Начало инициализации таймера...');
+        
+        // Пробуем инициализировать таймер сразу
+        if (!initTimer()) {
+          // Если не получилось, пробуем через небольшую задержку
+          console.log('⏳ Повторная попытка инициализации через 100ms...');
+          setTimeout(() => {
+            if (!initTimer()) {
+              // Еще одна попытка
+              console.log('⏳ Повторная попытка инициализации через 500ms...');
+              setTimeout(() => {
+                initTimer();
+              }, 500);
+            }
+          }, 100);
+        }
+        
+        // Загружаем билеты пользователя после инициализации
+        // Пробуем загрузить несколько раз с разными задержками для надежности
+        let loadAttempts = 0;
+        const maxAttempts = 5;
+        
+        function tryLoadTickets() {
+          loadAttempts++;
+          console.log(`Попытка загрузки билетов #${loadAttempts}`);
+          
+          if (hasTG && tg) {
+            if (tg.initDataUnsafe?.user) {
+              console.log('Telegram WebApp готов, загружаем билеты...');
+              loadUserTickets();
+            } else {
+              console.log('Telegram WebApp есть, но пользователь еще не загружен, ждем...');
+              if (loadAttempts < maxAttempts) {
+                setTimeout(tryLoadTickets, 1000);
+              } else {
+                console.warn('Не удалось загрузить данные пользователя после', maxAttempts, 'попыток');
+              }
+            }
+          } else {
+            console.log('Telegram WebApp не доступен, ждем...');
+            if (loadAttempts < maxAttempts) {
+              setTimeout(tryLoadTickets, 1000);
+            } else {
+              console.warn('Telegram WebApp не доступен после', maxAttempts, 'попыток');
+            }
+          }
+        }
+        
+        // Первая попытка через 500ms
+        setTimeout(tryLoadTickets, 500);
+        
+        // Резервные попытки
+        setTimeout(tryLoadTickets, 1500);
+        setTimeout(tryLoadTickets, 3000);
+        
+        // Запускаем автоматическое обновление билетов после загрузки
+        setTimeout(() => {
+          startTicketsAutoRefresh();
+        }, 5000);
+      })();
+      
+      // Дополнительная проверка и запуск таймера после полной загрузки страницы
+      window.addEventListener('load', () => {
+        setTimeout(() => {
+          if (!timerInterval) {
+            console.log('🔄 Повторная попытка запуска таймера (после события load)');
+            initTimer();
+          }
+        }, 200);
+      });
+      
+      // Также пробуем запустить после DOMContentLoaded
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', () => {
+          setTimeout(() => {
+            if (!timerInterval) {
+              console.log('🔄 Повторная попытка запуска таймера (после DOMContentLoaded)');
+              initTimer();
+            }
+          }, 200);
+        });
+      }
+      
+      // Финальная попытка запуска таймера через 1 секунду после загрузки скрипта
+      setTimeout(() => {
+        if (!timerInterval) {
+          console.log('🔄 Финальная попытка запуска таймера');
+          initTimer();
+        }
+      }, 1000);
+    })();
+    
+    // ГАРАНТИРОВАННЫЙ ЗАПУСК ТАЙМЕРА - выполняется после загрузки страницы
+    (function() {
+      function forceStartTimer() {
+        const timerEl = document.getElementById('timer');
+        if (timerEl && !window.timerStarted) {
+          console.log('🔧 ГАРАНТИРОВАННЫЙ ЗАПУСК ТАЙМЕРА');
+          window.timerStarted = true;
+          
+          const DEFAULT_TIME = 10 * 60; // 10 минут
+          let remaining = DEFAULT_TIME;
+          
+          function updateTimer() {
+            const h = Math.floor(remaining/3600);
+            const m = Math.floor((remaining%3600)/60);
+            const sec = remaining%60;
+            const parts = [];
+            if (h>0) parts.push(String(h).padStart(2,'0'));
+            parts.push(String(m).padStart(2,'0'));
+            parts.push(String(sec).padStart(2,'0'));
+            timerEl.textContent = parts.join(':');
+          }
+          
+          updateTimer();
+          
+          const interval = setInterval(() => {
+            remaining--;
+            if (remaining <= 0) {
+              clearInterval(interval);
+              timerEl.textContent = '00:00:00';
+              return;
+            }
+            updateTimer();
+          }, 1000);
+          
+          console.log('✅ ГАРАНТИРОВАННЫЙ ТАЙМЕР ЗАПУЩЕН');
+        }
+      }
+      
+      if (document.readyState === 'complete') {
+        forceStartTimer();
+      } else {
+        window.addEventListener('load', forceStartTimer);
+        document.addEventListener('DOMContentLoaded', forceStartTimer);
+      }
+      
+      // Последняя попытка через 2 секунды
+      setTimeout(forceStartTimer, 2000);
+    })();
+    
+
+    // Это последний экран, можно оставить как есть или добавить возврат на главную
+    // Если нужно циклическое переключение, раскомментируйте:
+    // setTimeout(() => {
+    //   window.location.href = '/';
+    // }, 3000);
+  </script>
+</body>
+</html>

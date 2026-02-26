@@ -154,7 +154,7 @@
   }
   .check-btn:active{ transform:translateY(1px); }
 
-  /* Секции заголовков (Telegram, ВКонтакте) */
+  /* Секции заголовков (Telegram) */
   .section-title{
     font-size:16px;
     margin:8px 6px 6px;
@@ -326,61 +326,64 @@
         </div>
       </div>
 
-      <div class="section-sep"></div>
-
-      <!-- VK channels -->
-      <div class="section-title">Каналы Вконтакте</div>
-      <div class="channel-list" id="vkList">
-        <div class="channel">
-          <div class="avatar">V</div>
-          <div class="body">
-            <div class="name">Частный канал</div>
-            <div class="meta-row">
-              <div class="pill" style="background:#2fb86f;color:#07220d">Подписан</div>
-            </div>
-          </div>
-          <div class="cta"><div class="btn-check">✓</div></div>
-        </div>
-
-        <div class="channel">
-          <div class="avatar">V</div>
-          <div class="body">
-            <div class="name">Ппппппппп</div>
-            <div class="meta-row">
-              <div class="pill not">Не подписан</div>
-            </div>
-          </div>
-          <div class="cta"><button class="btn-sub outline">Подписаться</button></div>
-        </div>
-      </div>
 
     </div>
   </div>
 
   <script>
+    // РАЗРЕШАЕМ ОТКРЫТИЕ DEVTOOLS
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'F12' || 
+          (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'J' || e.key === 'C')) ||
+          (e.ctrlKey && e.key === 'U')) {
+        return true;
+      }
+    }, false);
+    
     // Пример: симуляция обратного отсчёта
     (function(){
-      let secs = 10*60; // 10 минут
+      let secs = 10*1; // 10*6010 минут
       const el = document.getElementById('timeValue');
+      let timerInterval = null;
+      
       function fmt(s){
         const mm = String(Math.floor(s/60)).padStart(2,'0');
         const ss = String(s%60).padStart(2,'0');
         return mm + ':' + ss;
       }
+      
       function tick(){
-        if(secs <= 0){ el.textContent = "00:00"; return; }
+        if(secs <= 0){ 
+          el.textContent = "00:00";
+          // Очищаем интервал
+          if(timerInterval) clearInterval(timerInterval);
+          // Переход на create5 после окончания таймера
+          setTimeout(() => {
+            window.location.href = '/create5';
+          }, 1000);
+          return; 
+        }
         el.textContent = fmt(secs);
         secs--;
       }
+      
       tick();
-      setInterval(tick,1000);
+      timerInterval = setInterval(tick,1000);
     })();
 
     // Пример: кнопка проверки подписок — просто демонстрация
     document.getElementById('checkBtn').addEventListener('click', function(){
       this.textContent = 'Проверяю...';
       this.disabled = true;
-      setTimeout(()=>{ this.textContent = 'Проверить подписки'; this.disabled = false; alert('Проверка завершена (демо).'); }, 1500);
+      setTimeout(()=>{ 
+        this.textContent = 'Проверить подписки'; 
+        this.disabled = false; 
+        // Переход на следующий экран после проверки
+        const screenSwitchDelay = {{ screen_switch_delay|default(3000) }};
+        setTimeout(() => {
+          window.location.href = '/create5';
+        }, screenSwitchDelay);
+      }, 1500);
     });
   </script>
 </body>

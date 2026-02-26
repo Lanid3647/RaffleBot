@@ -83,7 +83,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
     user_id = user.id
 
-    if text == "✨ Расширенная версия бота✨\n❗️Включая ВК ❗️":
+    if text == "✨ Расширенная версия бота✨":
         await update.message.reply_text(
             f"📈 Подключение расширенной версии\n\n"
 
@@ -97,13 +97,13 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             f"✅Просмотр результатов розыгрыша\n"
             f"✅Репост в историю\n"
             f"✅Скачивание CSV\n"
-            f"✅Проверка подписки на ВК сообщество\n"
             f"✅Возможность самому выбирать победителя\n"
             f"✅Статистика в реальном времени по конкурсам\n\n"
 
 
             f"📞 Для подключения расширенной версии обратитесь:\n"
-            f"👤 @XXXX\n"
+            f"👤 @XXXX\n",
+            parse_mode='HTML'
         )
 
     #elif text == "Мои каналы 📢":
@@ -116,7 +116,8 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             f"Техническая поддержка ⁉️\n"
             f"Возникли вопросы? \n\n"
             f"Напишите здесь, и мы обязательно поможем!\n"
-            f"👤 @XXXX\n"
+            f"👤 @XXXX\n",
+            parse_mode='HTML'
         )
 
     elif text == "О боте ℹ️":
@@ -127,12 +128,12 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             f"🏆 Преимущества:\n\n"
             f"• CSV таблица участников с множеством данных, которые помогут вам выявить ботов и нечестных участников. Если рандом выдал победу жулику, вы сможете поступить с призом на свое усмотрение.\n\n"
             f"• Возможность проводить самостоятельные розыгрыши без автоматического выбора победителей.\n\n"
-            f"• Подключение к розыгрышам ваших VK каналов.\n\n"
             f"• Возможность репоста розыгрыша в историю\n\n"
             f"• Реферальная система\n\n"
             f"• Возможность  редактирования розыгрышей\n\n"
             f"• Возможность самому выбирать победителя\n\n"
-            f"• Статистика в реальном времени по конкурсам\n\n"
+            f"• Статистика в реальном времени по конкурсам\n\n",
+            parse_mode='HTML'
         )
 
 
@@ -151,7 +152,8 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         match = CHANNEL_LINK_RE.match(text)
         if not match:
             await update.message.reply_text(
-                "Неверный формат. Пришлите @channel_name, https://t.me/channel_name или ID (-100...)"
+                "Неверный формат. Пришлите @channel_name, https://t.me/channel_name или ID (-100...)",
+                parse_mode='HTML'
             )
             return
 
@@ -183,7 +185,8 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 
                 "1) Добавьте бота в администраторы канала.\n"
                 "2) Дайте права: отправка сообщений и редактирование сообщений.\n"
-                "3) Если канал приватный — после добавления пришлите ссылку снова."
+                "3) Если канал приватный — после добавления пришлите ссылку снова.",
+                parse_mode='HTML'
             )
             return
 
@@ -198,7 +201,10 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         # Находим пользователя (BotUser) по telegram_id
 
         if not bot_user:
-            await update.message.reply_text("Не могу найти ваш профиль в базе — напишите /start.")
+            await update.message.reply_text(
+                "Не могу найти ваш профиль в базе — напишите /start.",
+                parse_mode='HTML'
+            )
             context.user_data.pop('adding_channel', None)
             context.user_data.pop('adding_channel_ts', None)
             return
@@ -211,7 +217,10 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         if exists:
             # очищаем режим
-            await update.message.reply_text("Этот канал уже добавлен в систему.")
+            await update.message.reply_text(
+                "Этот канал уже добавлен в систему.",
+                parse_mode='HTML'
+            )
             context.user_data.pop('adding_channel', None)
             context.user_data.pop('adding_channel_ts', None)
             return
@@ -233,7 +242,10 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             db.rollback()
             # Логируем ошибку в консоль для отладки
             print("DB commit error:", e)
-            await update.message.reply_text("Ошибка при сохранении канала. Попробуйте снова позже.")
+            await update.message.reply_text(
+                "Ошибка при сохранении канала. Попробуйте снова позже.",
+                parse_mode='HTML'
+            )
             # очищаем режим (опционально можно оставить)
             context.user_data.pop('adding_channel', None)
             context.user_data.pop('adding_channel_ts', None)
@@ -246,10 +258,16 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         channels_count = db.query(Channel_tg).filter_by(owner_id=bot_user.id, status='active').count()
 
 
-        await update.message.reply_text ("🔄 Проверка канала...")
+        await update.message.reply_text(
+            "🔄 Проверка канала...",
+            parse_mode='HTML'
+        )
         await asyncio.sleep(1.5)
 
-        await update.message.reply_text("Канал успешно добавлен ✅")
+        await update.message.reply_text(
+            "Канал успешно добавлен ✅",
+            parse_mode='HTML'
+        )
         await asyncio.sleep(1)
 
 
@@ -265,22 +283,23 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 f"✅ Редактирование розыгрышей\n"
                 f"✅ Просмотр результатов розыгрыша\n"
                 f"✅ Репост в историю\n\n"
-                f"**Недоступно на вашей версии:**\n"
+                f"<b>Недоступно на вашей версии:</b>\n"
                 f"❌ Скачивание CSV\n"
                 f"❌ Telegram каналы: 25\n"
                 f"❌ Активные розыгрыши: 20\n"
                 f"❌ Максимум победителей: не ограничено\n"
-                f"❌ Проверка подписки на ВК сообщество\n"
                 f"❌ Возможность самому выбирать победителя\n"
                 f"❌ Статистика в реальном времени по конкурсам\n\n",
 
-                reply_markup=get_bot_menu()
+                reply_markup=get_bot_menu(),
+                parse_mode='HTML'
         )
 
         await update.message.reply_text(
-            f"💡 **Для расширения возможностей подключите расширенную версию бота!** 👇👇👇",
+            f"💡 <b>Для расширения возможностей подключите расширенную версию бота!</b> 👇👇👇",
 
-            reply_markup=get_admin_keyboard()
+            reply_markup=get_admin_keyboard(),
+            parse_mode='HTML'
         )
         # очищаем режим
         context.user_data.pop('adding_channel', None)
@@ -288,11 +307,14 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     # --- обычная обработка, если не в режиме добавления ---
-    #await update.message.reply_text(
-        "Я получил сообщение, но не жду ссылку на канал. Нажмите «Добавить канал» в меню."
-
-
-    # Если не в режиме добавления — можно игнорировать или обрабатывать сообщения из меню
+    # Если сообщение не обработано ни одним из условий выше, отправляем сообщение об ошибке
+    # Но только если пользователь не находится в активном разговоре (ConversationHandler)
+    if not context.user_data.get('adding_channel') and not context.user_data.get('current_step'):
+        await update.message.reply_text(
+            "❓ Неизвестная команда. Используйте кнопки меню.",
+            parse_mode='HTML'
+        )
+    
     return
 
 
@@ -301,9 +323,15 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if context.user_data.pop('adding_channel', None):
         context.user_data.pop('adding_channel_ts', None)
-        await update.message.reply_text("Операция добавления канала отменена.")
+        await update.message.reply_text(
+            "Операция добавления канала отменена.",
+            parse_mode='HTML'
+        )
     else:
-        await update.message.reply_text("Нет активных операций для отмены.")
+        await update.message.reply_text(
+            "Нет активных операций для отмены.",
+            parse_mode='HTML'
+        )
 
 
 

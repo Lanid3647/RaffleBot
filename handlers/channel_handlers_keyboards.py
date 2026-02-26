@@ -14,7 +14,8 @@ async def my_channels(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     await message.reply_text(
         "🔥 Выберите нужный список каналов:",
-        reply_markup=reply_markup
+        reply_markup=reply_markup,
+        parse_mode='HTML'
     )
     return STEP_CHANNEL_1
 
@@ -63,26 +64,11 @@ async def tg_channels(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         await message.reply_text(
             text,
-            reply_markup=reply_markup
+            reply_markup=reply_markup,
+            parse_mode='HTML'
         )
 
         return STEP_CHANNEL_1
-
-async def vk_channels(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    message = update.message
-
-
-    await message.reply_text(
-         "❌ Подключение \n"
-         "🔹Каналов Вконтакте🔹 недоступно на вашей версии (Базовая)\n\n"
-         "💡 Для доступа к этой функции подключите расширенную версию.\n\n" 
-         "📞 Для подключения расширенной версии обратитесь:\n"
-         " 👤 @XXXX",
-
-        )
-    return STEP_CHANNEL_1
-
-
 
 async def back_channel(update: Update, context: ContextTypes.DEFAULT_TYPE):
     message = update.message
@@ -90,6 +76,8 @@ async def back_channel(update: Update, context: ContextTypes.DEFAULT_TYPE):
     reply_markup = get_bot_menu()
     await message.reply_text(
         "⭐️ Главное меню ⭐️",
-        reply_markup=reply_markup)
+        reply_markup=reply_markup,
+        parse_mode='HTML'
+    )
 
     return ConversationHandler.END

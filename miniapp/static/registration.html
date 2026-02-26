@@ -1,0 +1,861 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <title>Регистрация</title>
+  <style>
+    :root{
+      --bg-page: #000000;
+      --phone-bg: #2a2a2a;
+      --panel-bg: #3a3a3a;
+      --muted: #cccccc;
+      --accent: #ffffff;
+      --gap: 12px;
+      --phone-max-w: 360px;
+      --phone-min-h: 640px;
+      --phone-radius: 20px;
+      --info-radius: 12px;
+      --safe-fonts: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      --error-color: #ff4444;
+      --success-color: #44ff44;
+    }
+
+    html, body {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+      background: var(--bg-page);
+      font-family: var(--safe-fonts);
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      color: var(--accent);
+      box-sizing: border-box;
+      overflow-x: hidden;
+    }
+    
+    /* Убеждаемся, что контент виден даже при ошибках JavaScript */
+    body {
+      min-height: 100vh;
+      display: block;
+    }
+    *, *::before, *::after { box-sizing: inherit; }
+
+    .page-wrap{
+      min-height:100vh;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding: 2px;
+    }
+
+    .phone-screen{
+      width:100%;
+      max-width: var(--phone-max-w);
+      min-height: calc(100vh - 16px);
+      max-height: calc(100vh - 4px);
+      background: black;
+      border-radius: var(--phone-radius);
+      padding: 20px;
+      display:flex;
+      flex-direction:column;
+      gap: 20px;
+      box-shadow: 0 6px 30px rgba(0,0,0,0.6);
+      margin: 0 auto;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .top-panel{
+      display:flex;
+      flex-direction: column;
+      align-items:center;
+      justify-content:center;
+      gap:15px;
+      text-align:center;
+    }
+
+    .top-panel .title{
+      font-size: 28px;
+      line-height: 1.2;
+      font-weight:700;
+      margin:0;
+      color: var(--accent);
+    }
+
+    .top-panel .subtitle{
+      font-size: 16px;
+      color: var(--muted);
+      margin:0;
+    }
+
+    .form-container{
+      display:flex;
+      flex-direction:column;
+      gap: 20px;
+    }
+
+    .form-group{
+      display:flex;
+      flex-direction:column;
+      gap: 8px;
+    }
+
+    .form-label{
+      font-size: 14px;
+      color: var(--muted);
+      font-weight: 500;
+    }
+
+    .form-input{
+      width: 100%;
+      padding: 14px 16px;
+      background: var(--panel-bg);
+      border: 2px solid transparent;
+      border-radius: var(--info-radius);
+      color: var(--accent);
+      font-size: 16px;
+      font-family: var(--safe-fonts);
+      transition: border-color 0.2s;
+    }
+
+    .form-input:focus{
+      outline: none;
+      border-color: var(--accent);
+    }
+
+    .form-input::placeholder{
+      color: #666;
+    }
+
+    .error-message{
+      color: var(--error-color);
+      font-size: 14px;
+      margin-top: 4px;
+      display: none;
+    }
+
+    .error-message.show{
+      display: block;
+    }
+
+    .success-message{
+      color: var(--success-color);
+      font-size: 14px;
+      margin-top: 4px;
+      display: none;
+    }
+
+    .success-message.show{
+      display: block;
+    }
+
+    .submit-btn{
+      width: 100%;
+      padding: 16px;
+      background: var(--accent);
+      color: var(--bg-page);
+      border: none;
+      border-radius: var(--info-radius);
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.2s;
+      font-family: var(--safe-fonts);
+    }
+
+    .submit-btn:hover{
+      opacity: 0.9;
+    }
+
+    .submit-btn:active{
+      opacity: 0.8;
+    }
+
+    .submit-btn:disabled{
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .info-text{
+      font-size: 13px;
+      color: var(--muted);
+      text-align: center;
+      line-height: 1.5;
+    }
+
+    .captcha-container{
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .captcha-question{
+      padding: 16px;
+      background: var(--panel-bg);
+      border-radius: var(--info-radius);
+      text-align: center;
+      color: var(--accent);
+      font-size: 24px;
+      font-weight: 600;
+      min-height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .refresh-captcha-btn{
+      padding: 10px 16px;
+      background: var(--panel-bg);
+      color: var(--accent);
+      border: 2px solid var(--accent);
+      border-radius: var(--info-radius);
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-family: var(--safe-fonts);
+      width: 100%;
+    }
+
+    .refresh-captcha-btn:hover{
+      background: var(--accent);
+      color: var(--bg-page);
+    }
+
+    .refresh-captcha-btn:active{
+      opacity: 0.8;
+    }
+  </style>
+</head>
+<body>
+  <div class="page-wrap">
+    <div class="phone-screen">
+      <div class="top-panel">
+        <h1 class="title">Регистрация</h1>
+        <p class="subtitle">Подтвердите, что вы не робот</p>
+      </div>
+
+      <!-- Индикатор ошибок (показывается при проблемах) -->
+      <div id="errorIndicator" style="display: none; position: fixed; top: 10px; left: 10px; right: 10px; background: rgba(255, 68, 68, 0.9); color: white; padding: 15px; border-radius: 10px; z-index: 10000; font-size: 14px; box-shadow: 0 4px 12px rgba(0,0,0,0.3);">
+        <strong>⚠️ Ошибка загрузки</strong>
+        <div id="errorIndicatorText" style="margin-top: 8px;"></div>
+        <button onclick="document.getElementById('errorIndicator').style.display='none'" style="margin-top: 10px; padding: 5px 15px; background: white; color: #ff4444; border: none; border-radius: 5px; cursor: pointer; font-weight: bold;">Закрыть</button>
+      </div>
+
+      <div class="form-container">
+        <form id="registrationForm">
+          <!-- Информация о пользователе (скрыто) -->
+          <div class="form-group" style="display: none;">
+            <input type="hidden" id="username" name="username" />
+          </div>
+
+          <!-- Капча -->
+          <div class="form-group">
+            <label class="form-label" for="captchaAnswer">Решите пример для подтверждения</label>
+            <div class="captcha-container" id="captchaContainer">
+              <div class="captcha-question" id="captchaQuestion"></div>
+              <input 
+                type="number" 
+                id="captchaAnswer" 
+                name="captchaAnswer" 
+                class="form-input" 
+                placeholder="Введите ответ"
+                required
+                autocomplete="off"
+              />
+              <button type="button" class="refresh-captcha-btn" id="refreshCaptchaBtn">
+                🔄 Обновить
+              </button>
+            </div>
+            <div class="error-message" id="captchaError"></div>
+            <div class="error-message" id="usernameError"></div>
+            <div class="success-message" id="usernameSuccess"></div>
+          </div>
+
+          <button type="submit" class="submit-btn" id="submitBtn">
+            Зарегистрироваться
+          </button>
+        </form>
+
+        <p class="info-text">
+          После регистрации вы сможете использовать все функции приложения
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <script>
+    // РАЗРЕШАЕМ ОТКРЫТИЕ DEVTOOLS - убираем любую защиту
+    // Разрешаем все комбинации клавиш для открытия DevTools
+    document.addEventListener('keydown', function(e) {
+      // Разрешаем F12, Ctrl+Shift+I, Ctrl+Shift+J, Ctrl+U и другие
+      if (e.key === 'F12' || 
+          (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'J' || e.key === 'C')) ||
+          (e.ctrlKey && e.key === 'U')) {
+        // Не блокируем - разрешаем открытие DevTools
+        return true;
+      }
+    }, false);
+    
+    // КРИТИЧЕСКИ ВАЖНО: Показываем контент сразу, даже если JavaScript не загрузился
+    (function() {
+      if (document.body) {
+        document.body.style.visibility = 'visible';
+        document.body.style.opacity = '1';
+      }
+      document.documentElement.style.visibility = 'visible';
+    })();
+    
+    // Обработка всех ошибок, чтобы они не блокировали загрузку страницы
+    window.addEventListener('error', function(e) {
+      console.error('Ошибка JavaScript:', e.error);
+      // Не блокируем загрузку страницы
+      e.preventDefault();
+      // Гарантируем видимость страницы
+      if (document.body) {
+        document.body.style.visibility = 'visible';
+        document.body.style.opacity = '1';
+      }
+      document.documentElement.style.visibility = 'visible';
+    }, true);
+    
+    // Обработка необработанных промисов
+    window.addEventListener('unhandledrejection', function(e) {
+      const errorMsg = e.reason ? (e.reason.toString() || JSON.stringify(e.reason)) : 'Неизвестная ошибка промиса';
+      console.error('Необработанная ошибка промиса:', errorMsg);
+      
+      // Показываем ошибку на странице для мобильных устройств
+      showErrorOnPage('Ошибка загрузки данных: ' + errorMsg, '');
+      
+      e.preventDefault();
+      // Гарантируем видимость страницы
+      if (document.body) {
+        document.body.style.visibility = 'visible';
+        document.body.style.opacity = '1';
+      }
+      document.documentElement.style.visibility = 'visible';
+    });
+    
+    // Ждем загрузки DOM перед выполнением кода
+    (function() {
+      // Сразу показываем страницу
+      if (document.body) {
+        document.body.style.visibility = 'visible';
+        document.body.style.opacity = '1';
+      }
+      
+      function runWhenReady() {
+        try {
+          // Инициализация Telegram WebApp с обработкой ошибок
+          let tg = null;
+          try {
+            tg = window.Telegram?.WebApp;
+            if (tg) {
+              tg.expand();
+              tg.ready();
+              console.log('✅ Telegram WebApp инициализирован');
+            } else {
+              console.warn('⚠️ Telegram WebApp не найден - возможно, открыто вне Telegram');
+            }
+          } catch (e) {
+            console.warn('Ошибка инициализации Telegram WebApp:', e);
+            // Не блокируем загрузку страницы
+          }
+          
+          // Гарантируем видимость страницы
+          if (document.body) {
+            document.body.style.visibility = 'visible';
+            document.body.style.opacity = '1';
+          }
+
+          // Получаем элементы с проверкой на существование
+          const form = document.getElementById('registrationForm');
+          const usernameInput = document.getElementById('username');
+          const usernameError = document.getElementById('usernameError');
+          const usernameSuccess = document.getElementById('usernameSuccess');
+          const submitBtn = document.getElementById('submitBtn');
+          const captchaQuestion = document.getElementById('captchaQuestion');
+          const captchaAnswerInput = document.getElementById('captchaAnswer');
+          const captchaError = document.getElementById('captchaError');
+          const refreshCaptchaBtn = document.getElementById('refreshCaptchaBtn');
+          
+          // Проверяем, что все необходимые элементы найдены
+          if (!form || !usernameInput || !submitBtn || !captchaQuestion || !captchaAnswerInput) {
+            console.error('❌ Не все необходимые элементы найдены на странице!');
+            // Показываем сообщение об ошибке, если элементы не найдены
+            if (document.body) {
+              const errorMsg = document.createElement('div');
+              errorMsg.style.cssText = 'padding: 20px; color: white; text-align: center;';
+              errorMsg.textContent = 'Ошибка загрузки страницы. Пожалуйста, обновите страницу.';
+              document.body.appendChild(errorMsg);
+            }
+            return; // Прекращаем выполнение, если элементы не найдены
+          }
+
+          // Получаем данные пользователя из Telegram с обработкой ошибок
+          let telegramUser = null;
+          let telegramId = null;
+          let telegramUsername = null;
+          
+          try {
+            if (tg && tg.initDataUnsafe?.user) {
+              telegramUser = tg.initDataUnsafe.user;
+              telegramId = telegramUser.id;
+              
+              // Автоматически берем username из Telegram
+              if (telegramUser.username) {
+                telegramUsername = telegramUser.username;
+                if (usernameInput) {
+                  usernameInput.value = telegramUsername;
+                }
+              } else {
+                // Если у пользователя нет username, используем first_name или "user" + id
+                telegramUsername = telegramUser.first_name || `user${telegramUser.id}`;
+                if (usernameInput) {
+                  usernameInput.value = telegramUsername;
+                }
+              }
+            }
+          } catch (e) {
+            console.warn('Ошибка при получении данных пользователя:', e);
+          }
+
+          // Переменные для капчи
+          let currentCaptchaId = null;
+          let currentCaptchaAnswer = null;
+          let telegramInitData = null;
+
+          // Получаем initData от Telegram (поддержка разных способов для совместимости с Telegram Desktop)
+          function getInitData() {
+            if (!tg) {
+              return null;
+            }
+            
+            // Пробуем разные способы получения initData
+            // 1. Основной способ - tg.initData
+            if (tg.initData && tg.initData.trim()) {
+              return tg.initData;
+            }
+            
+            // 2. Альтернативный способ - tg.initDataRaw
+            if (tg.initDataRaw && tg.initDataRaw.trim()) {
+              return tg.initDataRaw;
+            }
+            
+            // 3. Из URL параметров (для некоторых случаев)
+            try {
+              const urlParams = new URLSearchParams(window.location.search);
+              const tgWebAppData = urlParams.get('tgWebAppData');
+              if (tgWebAppData && tgWebAppData.trim()) {
+                return tgWebAppData;
+              }
+            } catch (e) {
+              console.warn('Не удалось получить initData из URL:', e);
+            }
+            
+            return null;
+          }
+
+          // Проверка наличия initData от Telegram с обработкой ошибок
+          try {
+            telegramInitData = getInitData();
+      
+      if (!telegramInitData) {
+        console.error('initData не найден. Доступные свойства tg:', tg ? Object.keys(tg) : 'tg отсутствует');
+        if (typeof showError === 'function') {
+          showError('Не удалось получить данные от Telegram. Пожалуйста, откройте приложение через Telegram.');
+        }
+        if (submitBtn) {
+          submitBtn.disabled = true;
+        }
+        // Скрываем форму капчи, если нет initData
+        const captchaContainer = document.getElementById('captchaContainer');
+        if (captchaContainer) {
+          captchaContainer.style.display = 'none';
+        }
+      } else {
+        console.log('initData получен, длина:', telegramInitData.length);
+        
+        // Если нет данных пользователя из Telegram, показываем ошибку
+        if (!telegramUser || !telegramId) {
+          if (typeof showError === 'function') {
+            showError('Не удалось получить данные пользователя из Telegram. Пожалуйста, откройте приложение через Telegram.');
+          }
+          if (submitBtn) {
+            submitBtn.disabled = true;
+          }
+          const captchaContainer = document.getElementById('captchaContainer');
+          if (captchaContainer) {
+            captchaContainer.style.display = 'none';
+          }
+        }
+      }
+          } catch (e) {
+            console.error('Ошибка при проверке initData:', e);
+            // Не блокируем загрузку страницы
+          }
+
+          // Инициализация страницы с обработкой ошибок
+          async function initPage() {
+      try {
+        // Проверяем наличие initData перед загрузкой капчи
+        if (!telegramInitData) {
+          const errorMsg = 'initData отсутствует - капча не будет загружена. Откройте приложение через Telegram.';
+          console.error(errorMsg);
+          showErrorOnPage('Ошибка инициализации', errorMsg);
+          if (captchaError) {
+            captchaError.textContent = errorMsg;
+            captchaError.classList.add('show');
+          }
+          return;
+        }
+        
+        // Загружаем капчу только если есть валидный initData
+        await loadCaptcha();
+      } catch (e) {
+        const errorMsg = 'Ошибка при инициализации страницы: ' + (e.message || e.toString());
+        console.error(errorMsg, e);
+        showErrorOnPage('Ошибка загрузки', errorMsg);
+        // Показываем сообщение пользователю
+        if (captchaError) {
+          captchaError.textContent = 'Ошибка загрузки. Пожалуйста, обновите страницу.';
+          captchaError.classList.add('show');
+        }
+      }
+    }
+
+          // Запускаем инициализацию при загрузке с обработкой ошибок
+          try {
+            // Ждем полной загрузки DOM
+            if (document.readyState === 'loading') {
+              document.addEventListener('DOMContentLoaded', () => {
+                setTimeout(initPage, 100);
+              });
+            } else {
+              setTimeout(initPage, 100);
+            }
+          } catch (e) {
+            console.error('Ошибка при запуске инициализации:', e);
+          }
+
+          // Загрузка новой капчи
+          async function loadCaptcha() {
+      // Проверяем наличие initData
+      if (!telegramInitData) {
+        showCaptchaError('Не удалось получить данные от Telegram. Откройте приложение через Telegram.');
+        return;
+      }
+      
+      try {
+        const response = await fetch('/api/captcha/generate', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            init_data: telegramInitData
+          })
+        });
+        
+        // Проверяем, что ответ получен
+        if (!response) {
+          showCaptchaError('Не удалось получить ответ от сервера. Проверьте подключение к интернету.');
+          return;
+        }
+        
+        // Пытаемся получить данные (может быть JSON или текст)
+        let data;
+        const contentType = response.headers.get('content-type');
+        if (contentType && contentType.includes('application/json')) {
+          try {
+            data = await response.json();
+          } catch (jsonError) {
+            console.error('Ошибка парсинга JSON:', jsonError);
+            const textResponse = await response.text();
+            console.error('Ответ сервера:', textResponse);
+            showCaptchaError('Ошибка при обработке ответа сервера. Попробуйте обновить страницу.');
+            return;
+          }
+        } else {
+          // Если не JSON, пытаемся прочитать как текст
+          try {
+            const textResponse = await response.text();
+            console.error('Сервер вернул не JSON. Статус:', response.status, 'Ответ:', textResponse);
+            showCaptchaError('Ошибка при загрузке капчи. Попробуйте обновить страницу.');
+          } catch (textError) {
+            console.error('Ошибка при чтении текстового ответа:', textError);
+            showCaptchaError('Ошибка при загрузке капчи. Проверьте подключение к интернету.');
+          }
+          return;
+        }
+        
+        if (response.ok) {
+          if (data.captcha_id && data.question) {
+            currentCaptchaId = data.captcha_id;
+            currentCaptchaAnswer = data.answer;
+            captchaQuestion.textContent = data.question;
+            captchaAnswerInput.value = '';
+            hideCaptchaError();
+            // Скрываем индикатор ошибок, если он был показан
+            const errorIndicator = document.getElementById('errorIndicator');
+            if (errorIndicator) {
+              errorIndicator.style.display = 'none';
+            }
+            // Показываем контейнер капчи, если он был скрыт
+            document.getElementById('captchaContainer').style.display = 'flex';
+          } else {
+            const errorMsg = 'Ошибка: неполные данные капчи. Попробуйте обновить страницу.';
+            console.error('Неполные данные капчи:', data);
+            showCaptchaError(errorMsg);
+            showErrorOnPage('Ошибка загрузки капчи', errorMsg);
+          }
+        } else {
+          let errorMsg = '';
+          if (response.status === 403) {
+            errorMsg = 'Невалидные данные от Telegram. Откройте приложение через Telegram.';
+            showCaptchaError(errorMsg);
+            showErrorOnPage('Ошибка валидации', errorMsg);
+          } else if (response.status === 400) {
+            errorMsg = data.detail || 'Неверный запрос. Попробуйте обновить страницу.';
+            showCaptchaError(errorMsg);
+            showErrorOnPage('Ошибка запроса', errorMsg);
+          } else {
+            errorMsg = data.detail || data.message || 'Не удалось загрузить капчу. Попробуйте обновить страницу.';
+            showCaptchaError(errorMsg);
+            showErrorOnPage('Ошибка сервера', `Статус: ${response.status}. ${errorMsg}`);
+          }
+        }
+      } catch (error) {
+        const errorMsg = error.message || error.toString() || 'Неизвестная ошибка';
+        console.error('Ошибка при загрузке капчи:', error);
+        // Более детальная обработка ошибок
+        let userMessage = '';
+        if (error instanceof TypeError && error.message.includes('fetch')) {
+          userMessage = 'Ошибка подключения к серверу. Проверьте подключение к интернету.';
+        } else {
+          userMessage = 'Ошибка при загрузке капчи: ' + errorMsg + '. Попробуйте обновить страницу.';
+        }
+        showCaptchaError(userMessage);
+        showErrorOnPage('Ошибка загрузки капчи', errorMsg);
+      }
+    }
+
+    // Показ ошибки капчи
+          function showCaptchaError(message) {
+      captchaError.textContent = message;
+      captchaError.classList.add('show');
+    }
+
+    // Скрытие ошибки капчи
+          function hideCaptchaError() {
+      captchaError.classList.remove('show');
+    }
+
+          // Показ ошибки
+          function showError(message) {
+      usernameError.textContent = message;
+      usernameError.classList.add('show');
+      usernameSuccess.classList.remove('show');
+    }
+
+          // Показ успеха
+          function showSuccess(message) {
+      usernameSuccess.textContent = message;
+      usernameSuccess.classList.add('show');
+      usernameError.classList.remove('show');
+    }
+
+    // Скрытие сообщений
+          function hideMessages() {
+      usernameError.classList.remove('show');
+      usernameSuccess.classList.remove('show');
+    }
+
+          // Обработка отправки формы
+          if (form) {
+            form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      // Проверяем наличие initData
+      if (!telegramInitData) {
+        showError('Не удалось получить данные от Telegram. Откройте приложение через Telegram.');
+        return;
+      }
+      
+      // Проверяем наличие данных пользователя
+      if (!telegramUser || !telegramId) {
+        showError('Не удалось получить данные пользователя из Telegram.');
+        return;
+      }
+      
+      // Убеждаемся, что username установлен
+      if (!telegramUsername) {
+        telegramUsername = telegramUser.first_name || `user${telegramUser.id}`;
+        usernameInput.value = telegramUsername;
+      }
+
+      // Проверяем капчу
+      const captchaAnswer = parseInt(captchaAnswerInput.value);
+      if (isNaN(captchaAnswer)) {
+        showCaptchaError('Пожалуйста, введите числовой ответ');
+        return;
+      }
+
+      if (!currentCaptchaId) {
+        showCaptchaError('Капча не загружена. Пожалуйста, обновите страницу.');
+        return;
+      }
+
+      hideMessages();
+      hideCaptchaError();
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Регистрация...';
+
+      try {
+        // Получаем данные Telegram пользователя
+        const telegramId = telegramUser?.id || null;
+        const firstName = telegramUser?.first_name || null;
+        const lastName = telegramUser?.last_name || null;
+
+        const response = await fetch('/api/register', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            username: telegramUsername,
+            telegram_id: telegramId,
+            first_name: firstName,
+            last_name: lastName,
+            init_data: telegramInitData,
+            captcha_id: currentCaptchaId,
+            captcha_answer: captchaAnswer
+          })
+        });
+
+        // Проверяем, что ответ получен
+        if (!response) {
+          showError('Не удалось получить ответ от сервера. Проверьте подключение к интернету.');
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Зарегистрироваться';
+          return;
+        }
+        
+        // Пытаемся получить данные (может быть JSON или текст)
+        let data;
+        const contentType = response.headers.get('content-type');
+        if (contentType && contentType.includes('application/json')) {
+          try {
+            data = await response.json();
+          } catch (jsonError) {
+            console.error('Ошибка парсинга JSON:', jsonError);
+            const textResponse = await response.text();
+            console.error('Ответ сервера:', textResponse);
+            showError('Ошибка при обработке ответа сервера. Попробуйте еще раз.');
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Зарегистрироваться';
+            return;
+          }
+        } else {
+          const textResponse = await response.text();
+          console.error('Сервер вернул не JSON:', textResponse);
+          showError('Ошибка при регистрации. Попробуйте еще раз.');
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Зарегистрироваться';
+          return;
+        }
+
+        if (response.ok) {
+          showSuccess('Регистрация успешна! Перенаправление...');
+          
+          // Сохраняем информацию о регистрации в sessionStorage
+          sessionStorage.setItem('user_registered', 'true');
+          sessionStorage.setItem('user_username', telegramUsername);
+          
+          // Получаем следующий доступный экран с сервера
+          try {
+            const nextScreenResponse = await fetch('/api/next-screen');
+            const nextScreenData = await nextScreenResponse.json();
+            
+            if (nextScreenData.success && nextScreenData.next_screen) {
+              // Перенаправление на первый доступный экран
+              setTimeout(() => {
+                window.location.href = nextScreenData.next_screen;
+              }, 1000);
+            } else {
+              // Если нет доступных экранов, показываем ошибку
+              showError('Нет доступных экранов. Обратитесь к администратору.');
+              submitBtn.disabled = false;
+              submitBtn.textContent = 'Зарегистрироваться';
+            }
+          } catch (nextScreenError) {
+            console.error('Ошибка при получении следующего экрана:', nextScreenError);
+            // В случае ошибки пробуем перейти на /create как запасной вариант
+            setTimeout(() => {
+              window.location.href = '/create';
+            }, 1000);
+          }
+        } else {
+          if (data.detail && data.detail.includes('капч')) {
+            showCaptchaError(data.detail);
+            // Загружаем новую капчу при ошибке
+            await loadCaptcha();
+          } else {
+            showError(data.detail || data.message || 'Ошибка при регистрации. Попробуйте снова.');
+          }
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Зарегистрироваться';
+        }
+      } catch (error) {
+        console.error('Ошибка регистрации:', error);
+        // Более детальная обработка ошибок
+        if (error instanceof TypeError && error.message.includes('fetch')) {
+          showError('Ошибка подключения к серверу. Проверьте подключение к интернету.');
+        } else {
+          showError('Произошла ошибка: ' + (error.message || 'Неизвестная ошибка') + '. Попробуйте еще раз.');
+        }
+              if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Зарегистрироваться';
+              }
+            }
+          });
+          }
+
+          // Обработчик кнопки обновления капчи
+          if (refreshCaptchaBtn) {
+            refreshCaptchaBtn.addEventListener('click', async () => {
+              await loadCaptcha();
+            });
+          }
+          
+          // Завершаем инициализацию
+          console.log('✅ Инициализация приложения завершена');
+        } catch (e) {
+          console.error('❌ Критическая ошибка при инициализации:', e);
+          // Показываем сообщение об ошибке пользователю
+          if (document.body) {
+            const errorDiv = document.createElement('div');
+            errorDiv.style.cssText = 'position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.9); color: white; padding: 20px; border-radius: 10px; z-index: 10000; text-align: center;';
+            errorDiv.innerHTML = '<h2>Ошибка загрузки</h2><p>Пожалуйста, обновите страницу</p><button onclick="location.reload()" style="margin-top: 10px; padding: 10px 20px; background: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer;">Обновить</button>';
+            document.body.appendChild(errorDiv);
+          }
+        }
+      }
+      
+      // Запускаем код после загрузки DOM
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', runWhenReady);
+      } else {
+        // DOM уже загружен
+        runWhenReady();
+      }
+    })();
+  </script>
+</body>
+</html>
