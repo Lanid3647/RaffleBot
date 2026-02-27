@@ -186,17 +186,14 @@ class RaffleCreator:
         # Удаляем все сообщения
         await self.delete_previous_messages(update, context)
 
-        # Очищаем данные
+        # Очищаем данные, но сохраняем флаг отмены
         context.user_data.clear()
+        context.user_data['just_cancelled'] = True  # Флаг, что только что отменили
 
-        # Показываем главное меню
+        # Показываем главное меню в одном сообщении, чтобы избежать проблем с обработкой
         reply_markup = get_bot_menu()
         await update.message.reply_text(
-            "❌️ Создание розыгрыша отменено️",
-            parse_mode='HTML'
-        )
-        await update.message.reply_text(
-            "⚡️️ Главное меню ⚡️️",
+            "❌️ Создание розыгрыша отменено️\n\n⚡️️ Главное меню ⚡️️",
             reply_markup=reply_markup,
             parse_mode='HTML'
         )
@@ -1085,12 +1082,28 @@ class RaffleCreator:
             # 🔄 ИСПРАВЛЕНИЕ: Получаем ID розыгрыша из context.user_data
             raffle_id = context.user_data.get('saved_raffle_id')
 
-            if not raffle_id:
-                # Если ID нет в context, попробуем найти последний розыгрыш пользователя
+            db = None
+            try:
+                if not raffle_id:
+                    # Если ID нет в context, попробуем найти последний розыгрыш пользователя
+                    db = next(get_db())
+                    raffle = db.query(Raffle).filter_by(
+                        owner_id=update.effective_user.id
+                    ).order_by(Raffle.created_at.desc()).first()
+
+                    if not raffle:
+                        await update.effective_message.reply_text(
+                            "❌ Ошибка: розыгрыш не найден в базе данных",
+                            reply_markup=get_bot_menu(),
+                            parse_mode='HTML'
+                        )
+                        return ConversationHandler.END
+                    raffle_id = raffle.id
+                    db.close()
+                    db = None
+
                 db = next(get_db())
-                raffle = db.query(Raffle).filter_by(
-                    owner_id=update.effective_user.id
-                ).order_by(Raffle.created_at.desc()).first()
+                raffle = db.query(Raffle).filter_by(id=raffle_id).first()
 
                 if not raffle:
                     await update.effective_message.reply_text(
@@ -1099,131 +1112,160 @@ class RaffleCreator:
                         parse_mode='HTML'
                     )
                     return ConversationHandler.END
-                raffle_id = raffle.id
 
-            db = next(get_db())
-            raffle = db.query(Raffle).filter_by(id=raffle_id).first()
+                publication_channels = []
 
-            if not raffle:
-                await update.effective_message.reply_text(
-                    "❌ Ошибка: розыгрыш не найден в базе данных",
+                # 🔥 ОТЛАДКА: Проверяем, что сохранено в БД
+                print(f"🔍 DEBUG step_12:")
+                print(f"  raffle.publication_channels (raw): {raffle.publication_channels}")
+                print(f"  raffle.publication_channels (type): {type(raffle.publication_channels)}")
+                print(f"  raffle.publication_channels (repr): {repr(raffle.publication_channels)}")
+
+                if raffle.publication_channels:
+                    try:
+                        # Пробуем распарсить как JSON
+                        if isinstance(raffle.publication_channels, str):
+                            publication_channels = json.loads(raffle.publication_channels)
+                        elif isinstance(raffle.publication_channels, list):
+                            # Если уже список, используем как есть
+                            publication_channels = raffle.publication_channels
+                        else:
+                            # Пробуем через ast.literal_eval для Python-списков в строке
+                            import ast
+                            if isinstance(raffle.publication_channels, str):
+                                publication_channels = ast.literal_eval(raffle.publication_channels)
+                            else:
+                                publication_channels = []
+                        
+                        if not isinstance(publication_channels, list):
+                            print(f"⚠️ publication_channels не является списком: {type(publication_channels)}")
+                            publication_channels = []
+                    except Exception as e:
+                        print(f"❌ Ошибка парсинга каналов: {e}")
+                        import traceback
+                        traceback.print_exc()
+                        publication_channels = []
+                else:
+                    print(f"⚠️ raffle.publication_channels пустое или None")
+
+                print(f"📢 Каналы для публикации (после парсинга): {publication_channels}")
+                print(f"📢 Количество каналов: {len(publication_channels)}")
+
+                # Определяем время окончания
+                end_time = raffle.end_date
+                if end_time and isinstance(end_time, datetime):
+                    end_time_str = end_time.strftime("%d.%m.%Y %H:%M")
+                else:
+                    end_time_str = "не указано"
+
+                msg1 = await update.effective_message.reply_text(
+                    f"🔄 Создание розыгрыша и публикация в каналах...\n\n",
+                    parse_mode='HTML'
+                )
+                self.save_message_id(context, msg1.message_id)
+
+                publication_results = []
+                channel_messages_dict = {}  # Словарь для хранения message_id постов
+
+                if publication_channels:
+                    print(f"🔄 Начинаем публикацию в {len(publication_channels)} каналов...")
+                    for channel_id in publication_channels:
+                        try:
+                            print(f"  📤 Публикация в канал {channel_id}...")
+                            message = await publish_giveaway_to_channel(
+                                raffle_id=raffle_id,
+                                channel_id=str(channel_id),
+                                bot=context.bot,
+                                db_session=db
+                            )
+                            channel = db.query(Channel_tg).filter_by(channel_id=str(channel_id)).first()
+                            channel_name = channel.channel_name if channel else f"Канал {channel_id}"
+
+                            if message:
+                                print(f"  ✅ Успешно опубликовано в {channel_name} (message_id: {message.message_id})")
+                                publication_results.append({
+                                    'success': True,
+                                    'channel_name': channel_name,
+                                    'message_id': message.message_id,
+                                    'error': None
+                                })
+                                # Сохраняем message_id для обновления поста после завершения
+                                channel_messages_dict[str(channel_id)] = message.message_id
+                            else:
+                                print(f"  ❌ Не удалось опубликовать в {channel_name}")
+                                publication_results.append({
+                                    'success': False,
+                                    'channel_name': channel_name,
+                                    'message_id': None,
+                                    'error': 'Не удалось опубликовать'
+                                })
+
+                        except Exception as e:
+                            print(f"  ❌ Ошибка при публикации в канал {channel_id}: {e}")
+                            import traceback
+                            traceback.print_exc()
+                            publication_results.append({
+                                'success': False,
+                                'channel_name': f"Канал {channel_id}",
+                                'message_id': None,
+                                'error': str(e)
+                            })
+                else:
+                    print(f"⚠️ Нет каналов для публикации (publication_channels пустой)")
+                    publication_results = []
+                
+                # Сохраняем message_id постов в БД
+                if channel_messages_dict:
+                    raffle = db.query(Raffle).filter_by(id=raffle_id).first()
+                    if raffle:
+                        raffle.channel_messages = json.dumps(channel_messages_dict)
+                        db.commit()
+                        print(f"✅ Сохранены message_id постов: {channel_messages_dict}")
+
+                # Формируем отчет о публикации
+                success_count = len([r for r in publication_results if r['success']])
+                total_count = len(publication_results)
+
+                if success_count > 0:
+                    status_text = f"✅ Розыгрыш успешно опубликован в {success_count} каналах!"
+                elif total_count > 0:
+                    status_text = "⚠️ Розыгрыш создан, но не опубликован в каналах"
+                else:
+                    status_text = "⚠️ Розыгрыш создан, но каналы для публикации не указаны"
+
+                publication_text = "📊 Результаты публикации:\n"
+                if publication_results:
+                    for result in publication_results:
+                        if result['success']:
+                            publication_text += f"✅ {result['channel_name']}: опубликовано\n"
+                        else:
+                            publication_text += f"❌ {result['channel_name']}: ошибка - {result['error']}\n"
+                else:
+                    publication_text += "❌ Каналы для публикации не были указаны при создании розыгрыша\n"
+
+                msg2 = await update.effective_message.reply_text(
+                    f"{status_text}\n\n"
+                    f"{publication_text}\n"
+                    f"🎯 Успешно: {success_count}/{total_count if total_count > 0 else len(publication_channels)} каналов\n\n"
+                    f"📋 Название: {raffle.name}\n"
+                    f"⏰ Время окончания: {end_time_str}\n"
+                    f"🔗 ID розыгрыша: {raffle_id}\n\n"
+                    f"<i>Розыгрыш будет автоматически завершен в указанное время</i>",
                     reply_markup=get_bot_menu(),
                     parse_mode='HTML'
                 )
+                self.save_message_id(context, msg2.message_id)
+
+                # ✅ Очищаем оставшиеся данные
+                final_keys_to_remove = ['saved_raffle_id', 'message_ids', 'channel_message_ids']
+                for key in final_keys_to_remove:
+                    if key in context.user_data:
+                        del context.user_data[key]
+
                 return ConversationHandler.END
-
-            publication_channels = []
-
-            if raffle.publication_channels:
-                try:
-                    publication_channels = json.loads(raffle.publication_channels)
-                    if not isinstance(publication_channels, list):
-                        publication_channels = []
-                except Exception as e:
-                    print(f"❌ Ошибка парсинга каналов: {e}")
-                    publication_channels = []
-
-            print(f"📢 Каналы для публикации: {publication_channels}")
-
-            # Определяем время окончания
-            end_time = raffle.end_date
-            if end_time and isinstance(end_time, datetime):
-                end_time_str = end_time.strftime("%d.%m.%Y %H:%M")
-            else:
-                end_time_str = "не указано"
-
-            msg1 = await update.effective_message.reply_text(
-                f"🔄 Создание розыгрыша и публикация в каналах...\n\n",
-                parse_mode='HTML'
-            )
-            self.save_message_id(context, msg1.message_id)
-
-            publication_results = []
-            channel_messages_dict = {}  # Словарь для хранения message_id постов
-
-            if publication_channels:
-                for channel_id in publication_channels:
-                    try:
-                        message = await publish_giveaway_to_channel(
-                            raffle_id=raffle_id,
-                            channel_id=str(channel_id),
-                            bot=context.bot,
-                            db_session=db
-                        )
-                        channel = db.query(Channel_tg).filter_by(channel_id=str(channel_id)).first()
-                        channel_name = channel.channel_name if channel else f"Канал {channel_id}"
-
-                        if message:
-                            publication_results.append({
-                                'success': True,
-                                'channel_name': channel_name,
-                                'message_id': message.message_id,
-                                'error': None
-                            })
-                            # Сохраняем message_id для обновления поста после завершения
-                            channel_messages_dict[str(channel_id)] = message.message_id
-                        else:
-                            publication_results.append({
-                                'success': False,
-                                'channel_name': channel_name,
-                                'message_id': None,
-                                'error': 'Не удалось опубликовать'
-                            })
-
-                    except Exception as e:
-                        publication_results.append({
-                            'success': False,
-                            'channel_name': f"Канал {channel_id}",
-                            'message_id': None,
-                            'error': str(e)
-                        })
-            else:
-                publication_results = []
-            
-            # Сохраняем message_id постов в БД
-            if channel_messages_dict:
-                import json
-                raffle = db.query(Raffle).filter_by(id=raffle_id).first()
-                if raffle:
-                    raffle.channel_messages = json.dumps(channel_messages_dict)
-                    db.commit()
-
-            # Формируем отчет о публикации
-            success_count = len([r for r in publication_results if r['success']])
-            total_count = len(publication_results)
-
-            if success_count > 0:
-                status_text = f"✅ Розыгрыш успешно опубликован в {success_count} каналах!"
-            else:
-                status_text = "⚠️ Розыгрыш создан, но не опубликован в каналах"
-
-            publication_text = f"📊 Результаты публикации:\n"
-            for result in publication_results:
-                if result['success']:
-                    publication_text += f"✅ {result['channel_name']}: опубликовано\n"
-                else:
-                    publication_text += f"❌ {result['channel_name']}: ошибка - {result['error']}\n"
-
-            msg2 = await update.effective_message.reply_text(
-                f"{status_text}\n\n"
-                f"{publication_text}\n"
-                f"🎯 Успешно: {success_count}/{total_count} каналов\n\n"
-                f"📋 Название: {raffle.name}\n"
-                f"⏰ Время окончания: {end_time_str}\n"
-                f"🔗 ID розыгрыша: {raffle_id}\n\n"
-                f"<i>Розыгрыш будет автоматически завершен в указанное время</i>",
-                reply_markup=get_bot_menu(),
-                parse_mode='HTML'
-            )
-            self.save_message_id(context, msg2.message_id)
-
-            # ✅ Очищаем оставшиеся данные
-            final_keys_to_remove = ['saved_raffle_id', 'message_ids', 'channel_message_ids']
-            for key in final_keys_to_remove:
-                if key in context.user_data:
-                    del context.user_data[key]
-
-            return ConversationHandler.END
+            finally:
+                if db:
+                    db.close()
 
         # После показа завершаем диалог
         return ConversationHandler.END
@@ -1298,6 +1340,16 @@ class RaffleCreator:
             else:
                 status = 'active'  # Если даты не указаны
 
+            # 🔥 ВАЖНО: Сохраняем Telegram ID каналов как JSON строку
+            publication_channels_json = json.dumps(publication_channels, ensure_ascii=False) if publication_channels else None
+            subscription_channels_json = json.dumps(subscription_channels, ensure_ascii=False) if subscription_channels else None
+            
+            # 🔥 ОТЛАДКА: Проверяем, что сохраняем
+            print(f"🔍 DEBUG save_final_raffle:")
+            print(f"  publication_channels (list): {publication_channels}")
+            print(f"  publication_channels (JSON): {publication_channels_json}")
+            print(f"  subscription_channels (list): {subscription_channels}")
+            print(f"  subscription_channels (JSON): {subscription_channels_json}")
 
             # Создаем розыгрыш
             raffle = Raffle(
@@ -1317,11 +1369,8 @@ class RaffleCreator:
                 referral_bonus_tickets=referral_bonus_tickets,
                 referral_bonus_required=referral_bonus_required,
 
-                # 🔥 ВАЖНО: Сохраняем Telegram ID каналов как JSON строку
-                publication_channels=json.dumps(publication_channels,
-                                                ensure_ascii=False) if publication_channels else None,
-                subscription_channels=json.dumps(subscription_channels,
-                                                 ensure_ascii=False) if subscription_channels else None,
+                publication_channels=publication_channels_json,
+                subscription_channels=subscription_channels_json,
 
                 luck_boost_enabled=luck_boost_enabled,
                 captcha_enabled=captcha_enabled,
@@ -1335,6 +1384,13 @@ class RaffleCreator:
             # 🔄 ВАЖНО: Получаем ID сохраненного розыгрыша
             db.refresh(raffle)
             saved_raffle_id = raffle.id
+
+            # 🔥 ОТЛАДКА: Проверяем, что сохранилось в БД
+            saved_raffle = db.query(Raffle).filter_by(id=saved_raffle_id).first()
+            if saved_raffle:
+                print(f"🔍 Проверка сохраненного розыгрыша:")
+                print(f"  saved_raffle.publication_channels: {saved_raffle.publication_channels}")
+                print(f"  saved_raffle.subscription_channels: {saved_raffle.subscription_channels}")
 
             print(f"✅ Розыгрыш сохранен: ID={saved_raffle_id}, Название='{name}'")
             print(f"=== END DEBUG ===")
@@ -1421,28 +1477,17 @@ async def publish_giveaway_to_channel(raffle_id: int, channel_id: str, bot, db_s
             except:
                 bot_username = 'your_bot_username'
         
-        # 🔥 Web App кнопка - используем WebAppInfo для мини-приложения
-        # Или обычную ссылку на бота с параметром start
-        webapp_url = os.getenv('WEBAPP_URL', '')
-        if webapp_url:
-            keyboard = [
-                [
-                    InlineKeyboardButton(
-                        text="🎁 Участвовать",
-                        web_app=WebAppInfo(url=f"{webapp_url}?raffle_id={raffle_id}")
-                    )
-                ]
+        # 🔥 ВАЖНО: В каналах нельзя использовать WebApp кнопки, только URL кнопки
+        # WebApp кнопки работают только в личных чатах с ботом
+        # Поэтому всегда используем URL кнопку для каналов
+        keyboard = [
+            [
+                InlineKeyboardButton(
+                    text="🎁 Участвовать",
+                    url=f"https://t.me/{bot_username}?start=raffle_{raffle_id}"
+                )
             ]
-        else:
-            # Используем обычную ссылку на бота
-            keyboard = [
-                [
-                    InlineKeyboardButton(
-                        text="🎁 Участвовать",
-                        url=f"https://t.me/{bot_username}?start=raffle_{raffle_id}"
-                    )
-                ]
-            ]
+        ]
 
         reply_markup = InlineKeyboardMarkup(keyboard)
 

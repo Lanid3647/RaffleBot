@@ -78,10 +78,38 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not update.message or not update.message.text:
         return
 
+    # Проверяем, что сообщение от пользователя, а не от бота
+    if update.message.from_user and update.message.from_user.is_bot:
+        return
 
     text = update.message.text.strip()
     user = update.effective_user
     user_id = user.id
+
+    # 🔥 ВАЖНО: Проверяем флаг отмены - если пользователь только что отменил создание,
+    # не выводим ошибку для следующего сообщения
+    if context.user_data.get('just_cancelled'):
+        context.user_data.pop('just_cancelled', None)  # Удаляем флаг после использования
+        # Игнорируем это сообщение - пользователь только что отменил создание
+        return
+
+    # 🔥 ВАЖНО: Проверяем текст "Главное меню" в самом начале, чтобы избежать ошибки
+    # после отмены создания розыгрыша
+    # Проверяем различные варианты написания
+    main_menu_texts = [
+        "⚡️️ Главное меню ⚡️️",
+        "⚡️ Главное меню ⚡️",
+        "⚡️️ Главное меню ⚡️",
+        "⚡️ Главное меню ⚡️️",
+        "Главное меню"
+    ]
+    
+    # Проверяем точное совпадение или содержит "Главное меню"
+    if text in main_menu_texts or ("Главное меню" in text and "⚡️" in text):
+        # Игнорируем это сообщение - оно отправляется ботом после отмены
+        # или пользователь нажал на кнопку главного меню
+        # Просто возвращаемся без обработки
+        return
 
     if text == "✨ Расширенная версия бота✨":
         await update.message.reply_text(
@@ -135,7 +163,6 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             f"• Статистика в реальном времени по конкурсам\n\n",
             parse_mode='HTML'
         )
-
 
     # Таймаут режима добавления канала
     # Авто-истечение флага (например, 10 минут)
@@ -309,11 +336,51 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # --- обычная обработка, если не в режиме добавления ---
     # Если сообщение не обработано ни одним из условий выше, отправляем сообщение об ошибке
     # Но только если пользователь не находится в активном разговоре (ConversationHandler)
-    if not context.user_data.get('adding_channel') and not context.user_data.get('current_step'):
+    # и отправил текстовое сообщение, которое не ожидается ботом
+    
+    # Проверяем, находится ли пользователь в активном разговоре
+    # ConversationHandler использует ключи вида '_conversation_state_<handler_name>' или просто хранит состояние
+    # Также проверяем наличие current_step для RaffleCreator
+    # Проверяем наличие других ключей, которые могут указывать на активный разговор
+    is_in_conversation = (
+        context.user_data.get('current_step') is not None or
+        context.user_data.get('current_raffle_id') is not None or
+        any(key.startswith('_conversation') for key in context.user_data.keys()) or
+        any(key.startswith('conversation') for key in context.user_data.keys())
+    )
+    
+    # Выводим сообщение об ошибке только если:
+    # 1. Пользователь не в режиме добавления канала
+    # 2. Пользователь не в активном разговоре (ConversationHandler)
+    # 3. Сообщение действительно является текстовым (не обработано другими обработчиками)
+    # 4. Пользователь явно отправил текстовое сообщение (не callback, не команда)
+    # 5. Сообщение не является "Главное меню" (уже обработано выше)
+    # 6. Пользователь не только что отменил создание (флаг just_cancelled)
+    
+    # Проверяем, не является ли это сообщение "Главное меню" (дополнительная проверка)
+    is_main_menu_text = (
+        "Главное меню" in text or 
+        text in main_menu_texts or 
+        (text.startswith("⚡️") and "Главное меню" in text)
+    )
+    
+    # Проверяем флаг отмены
+    just_cancelled = context.user_data.get('just_cancelled', False)
+    
+    if (not context.user_data.get('adding_channel') and 
+        not is_in_conversation and
+        update.message and 
+        update.message.text and
+        not is_main_menu_text and
+        not just_cancelled):
         await update.message.reply_text(
             "❓ Неизвестная команда. Используйте кнопки меню.",
             parse_mode='HTML'
         )
+    
+    # Удаляем флаг отмены после проверки
+    if just_cancelled:
+        context.user_data.pop('just_cancelled', None)
     
     return
 

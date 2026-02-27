@@ -28,52 +28,55 @@ def get_for_type_eight(user_id, selected_channels=None):
     print(f"Selected channels: {selected_channels}")
 
     db = next(get_db())
-    bot_user = db.query(BotUser).filter_by(telegram_id=user_id).first()
+    try:
+        bot_user = db.query(BotUser).filter_by(telegram_id=user_id).first()
 
-    if not bot_user:
-        print("Бот пользователь не найден")
-        return InlineKeyboardMarkup([[]])
+        if not bot_user:
+            print("Бот пользователь не найден")
+            return InlineKeyboardMarkup([[]])
 
-    # Получаем каналы пользователя
-    user_channels = db.query(Channel_tg).filter_by(
-        owner_id=bot_user.id,
-        status='active'
-    ).all()
+        # Получаем каналы пользователя
+        user_channels = db.query(Channel_tg).filter_by(
+            owner_id=bot_user.id,
+            status='active'
+        ).all()
 
-    print(f"Найдено каналов в БД: {len(user_channels)}")
+        print(f"Найдено каналов в БД: {len(user_channels)}")
 
-    keyboard = []
+        keyboard = []
 
-    # Определяем отображаемое имя канала
-    for channel in user_channels:
-        channel_name = channel.channel_name or channel.channel_username or f"Канал {channel.channel_id}"
+        # Определяем отображаемое имя канала
+        for channel in user_channels:
+            channel_name = channel.channel_name or channel.channel_username or f"Канал {channel.channel_id}"
 
-        # 🔥 ВАЖНОЕ ИЗМЕНЕНИЕ: Используем channel.channel_id (Telegram ID), а не channel.id (базовый ID)
-        channel_telegram_id = str(channel.channel_id)
+            # 🔥 ВАЖНОЕ ИЗМЕНЕНИЕ: Используем channel.channel_id (Telegram ID), а не channel.id (базовый ID)
+            channel_telegram_id = str(channel.channel_id)
 
-        # Проверяем, выбран ли канал
-        # selected_channels должен содержать Telegram ID каналов
-        is_selected = channel_telegram_id in selected_channels
+            # Проверяем, выбран ли канал
+            # selected_channels должен содержать Telegram ID каналов
+            is_selected = channel_telegram_id in selected_channels
 
-        print(f"Канал {channel.channel_id} '{channel_name}': выбран = {is_selected}")
+            print(f"Канал {channel.channel_id} '{channel_name}': выбран = {is_selected}")
 
-        emoji = "✅" if is_selected else "⚪"
+            emoji = "✅" if is_selected else "⚪"
 
-        # 🔥 ВАЖНОЕ ИЗМЕНЕНИЕ: В callback_data сохраняем Telegram ID
-        button = InlineKeyboardButton(
-            f"{emoji} {channel_name}",
-            callback_data=f"select_channel_{channel_telegram_id}"  # Используем channel_id, а не id
-        )
-        keyboard.append([button])
+            # 🔥 ВАЖНОЕ ИЗМЕНЕНИЕ: В callback_data сохраняем Telegram ID
+            button = InlineKeyboardButton(
+                f"{emoji} {channel_name}",
+                callback_data=f"select_channel_{channel_telegram_id}"  # Используем channel_id, а не id
+            )
+            keyboard.append([button])
 
-    # Кнопка "Продолжить"
-    if user_channels:  # Показываем кнопку, если есть каналы
-        keyboard.append([
-            InlineKeyboardButton("➡️ Продолжить", callback_data="continue_to_next_step")
-        ])
+        # Кнопка "Продолжить"
+        if user_channels:  # Показываем кнопку, если есть каналы
+            keyboard.append([
+                InlineKeyboardButton("➡️ Продолжить", callback_data="continue_to_next_step")
+            ])
 
-    print("=== END DEBUG ===")
-    return InlineKeyboardMarkup(keyboard)
+        print("=== END DEBUG ===")
+        return InlineKeyboardMarkup(keyboard)
+    finally:
+        db.close()
 
 
 def get_for_type_nine(user_id, selected_channels=None):
@@ -89,51 +92,54 @@ def get_for_type_nine(user_id, selected_channels=None):
     print(f"Selected channels: {selected_channels}")
 
     db = next(get_db())
-    bot_user = db.query(BotUser).filter_by(telegram_id=user_id).first()
+    try:
+        bot_user = db.query(BotUser).filter_by(telegram_id=user_id).first()
 
-    if not bot_user:
-        print("Бот пользователь не найден")
-        return InlineKeyboardMarkup([[]])
+        if not bot_user:
+            print("Бот пользователь не найден")
+            return InlineKeyboardMarkup([[]])
 
-    # Получаем каналы пользователя
-    user_channels = db.query(Channel_tg).filter_by(
-        owner_id=bot_user.id,
-        status='active'
-    ).all()
+        # Получаем каналы пользователя
+        user_channels = db.query(Channel_tg).filter_by(
+            owner_id=bot_user.id,
+            status='active'
+        ).all()
 
-    print(f"Найдено каналов в БД: {len(user_channels)}")
+        print(f"Найдено каналов в БД: {len(user_channels)}")
 
-    keyboard = []
+        keyboard = []
 
-    # Определяем отображаемое имя канала
-    for channel in user_channels:
-        channel_name = channel.channel_name or channel.channel_username or f"Канал {channel.channel_id}"
+        # Определяем отображаемое имя канала
+        for channel in user_channels:
+            channel_name = channel.channel_name or channel.channel_username or f"Канал {channel.channel_id}"
 
-        # 🔥 ВАЖНОЕ ИЗМЕНЕНИЕ: Используем channel.channel_id
-        channel_telegram_id = str(channel.channel_id)
+            # 🔥 ВАЖНОЕ ИЗМЕНЕНИЕ: Используем channel.channel_id
+            channel_telegram_id = str(channel.channel_id)
 
-        # Проверяем, выбран ли канал
-        is_selected = channel_telegram_id in selected_channels
+            # Проверяем, выбран ли канал
+            is_selected = channel_telegram_id in selected_channels
 
-        print(f"Канал {channel.channel_id} '{channel_name}': выбран = {is_selected}")
+            print(f"Канал {channel.channel_id} '{channel_name}': выбран = {is_selected}")
 
-        emoji = "✅" if is_selected else "⚪"
+            emoji = "✅" if is_selected else "⚪"
 
-        # 🔥 ВАЖНОЕ ИЗМЕНЕНИЕ: В callback_data сохраняем Telegram ID
-        button = InlineKeyboardButton(
-            f"{emoji} {channel_name}",
-            callback_data=f"select_channel_{channel_telegram_id}"  # Используем channel_id, а не id
-        )
-        keyboard.append([button])
+            # 🔥 ВАЖНОЕ ИЗМЕНЕНИЕ: В callback_data сохраняем Telegram ID
+            button = InlineKeyboardButton(
+                f"{emoji} {channel_name}",
+                callback_data=f"select_channel_{channel_telegram_id}"  # Используем channel_id, а не id
+            )
+            keyboard.append([button])
 
-    # Кнопка "Сохранить"
-    if user_channels:  # Показываем кнопку, если есть каналы
-        keyboard.append([
-            InlineKeyboardButton("➡️ Сохранить", callback_data="continue_to_next_step")
-        ])
+        # Кнопка "Сохранить"
+        if user_channels:  # Показываем кнопку, если есть каналы
+            keyboard.append([
+                InlineKeyboardButton("➡️ Сохранить", callback_data="continue_to_next_step")
+            ])
 
-    print("=== END DEBUG ===")
-    return InlineKeyboardMarkup(keyboard)
+        print("=== END DEBUG ===")
+        return InlineKeyboardMarkup(keyboard)
+    finally:
+        db.close()
 def get_for_type_ten(user_id, context):  # ✅ БЕЗ self
     """Создает клавиатуру для шага 10"""
     boost_emoji = "✅" if context.user_data.get('luck_boost_enabled') else "⚪"
@@ -276,6 +282,8 @@ def collect_raffle_data(context):
         print(f"Ошибка при получении названий каналов: {e}")
         publication_channel_names = [f"Канал {id}" for id in publication_channels]
         subscription_channel_names = [f"Канал {id}" for id in subscription_channels]
+    finally:
+        db.close()
 
     # ДЕБАГ: выводим для проверки
     print("=" * 50)
@@ -348,27 +356,30 @@ def get_channel_names(channel_ids, context):
         return []
 
     db = next(get_db())
-    channel_names = []
+    try:
+        channel_names = []
 
-    print(f"=== DEBUG get_channel_names ===")
-    print(f"Получены channel_ids: {channel_ids}")
-    print(f"Тип channel_ids: {type(channel_ids)}")
+        print(f"=== DEBUG get_channel_names ===")
+        print(f"Получены channel_ids: {channel_ids}")
+        print(f"Тип channel_ids: {type(channel_ids)}")
 
-    for channel_id in channel_ids:
-        # 🔥 ИСПРАВЛЕНИЕ: Ищем по channel_id (Telegram ID), а не id
-        channel = db.query(Channel_tg).filter_by(channel_id=str(channel_id)).first()
+        for channel_id in channel_ids:
+            # 🔥 ИСПРАВЛЕНИЕ: Ищем по channel_id (Telegram ID), а не id
+            channel = db.query(Channel_tg).filter_by(channel_id=str(channel_id)).first()
 
-        if channel:
-            channel_name = channel.channel_name or channel.channel_username or f"Канал {channel.channel_id}"
-            channel_names.append(channel_name)
-            print(f"Найден канал {channel_id}: {channel_name}")
-        else:
-            channel_names.append(f"Канал {channel_id}")
-            print(f"Канал {channel_id} не найден в БД")
+            if channel:
+                channel_name = channel.channel_name or channel.channel_username or f"Канал {channel.channel_id}"
+                channel_names.append(channel_name)
+                print(f"Найден канал {channel_id}: {channel_name}")
+            else:
+                channel_names.append(f"Канал {channel_id}")
+                print(f"Канал {channel_id} не найден в БД")
 
-    print(f"Результат: {channel_names}")
-    print("=== END DEBUG ===")
-    return channel_names
+        print(f"Результат: {channel_names}")
+        print("=== END DEBUG ===")
+        return channel_names
+    finally:
+        db.close()
 
 
 def get_final_confirmation_keyboard(luck_boost_enabled=False, captcha_enabled=False):

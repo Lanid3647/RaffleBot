@@ -95,9 +95,13 @@ def bot():
         raise
     
     # Добавляем обработчик для всех остальных команд для отладки
+    # Этот обработчик срабатывает только для неизвестных команд (начинающихся с /)
+    # и только если они не обработаны другими обработчиками команд
     async def unknown_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         command = update.message.text.split()[0] if update.message and update.message.text else "unknown"
         logger.warning(f"Неизвестная команда: {command}")
+        # Выводим сообщение только для реальных команд, которые не обработаны
+        # Это нормально, так как пользователь явно отправил команду
         await update.message.reply_text(
             "❓ Неизвестная команда. Используйте кнопки меню.",
             parse_mode='HTML'

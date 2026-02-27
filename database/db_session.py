@@ -16,11 +16,11 @@ DATABASE_URL_SSL = "postgresql://postgres:Fynza3-gocnyw-xurzed@db.osvztgewhvuswo
 # Пробуем без SSL сначала
 engine = create_engine(
     DATABASE_URL,  # ← БЕЗ SSL
-    pool_size=2,
-    max_overflow=0,
+    pool_size=5,
+    max_overflow=10,
     pool_timeout=30,
     pool_recycle=1800,
-    echo=True
+    echo=False  # Отключаем echo для производительности
 )
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
