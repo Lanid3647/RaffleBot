@@ -87,6 +87,7 @@ python -m pip install uvicorn
 python -m pip install python-dotenv
 python -m pip install python-multipart
 python -m pip install jinja2
+python -m pip install vk-api
 
 # Или установка из requirements.txt
 pip install -r requirements.txt
@@ -138,6 +139,9 @@ CREATE USER bot_user WITH PASSWORD '9349386375365';
 
 # Выдача прав
 GRANT ALL PRIVILEGES ON DATABASE raffle_bot TO bot_user;
+
+# Назначить пользователя владельцем базы данных
+ALTER DATABASE raffle_bot OWNER TO bot_user;  
 
 # Выход
 \q

@@ -17,11 +17,11 @@ def check_env_file():
     """Проверяет наличие и корректность .env файла"""
     required_vars = ['BOT_TOKEN', 'DATABASE_URL']
     missing_vars = []
-    
+
     for var in required_vars:
         if not os.getenv(var):
             missing_vars.append(var)
-    
+
     if missing_vars:
         print("❌ ОШИБКА: Отсутствуют обязательные переменные окружения:")
         for var in missing_vars:
@@ -33,7 +33,7 @@ def check_env_file():
         print("   BOT_USERNAME=your_bot_username")
         print("   WEBAPP_URL=https://your-webapp-url.com")
         return False
-    
+
     return True
 
 def check_migrations():
@@ -42,16 +42,16 @@ def check_migrations():
         from database.db_session import get_db
         from database.models import Raffle
         from sqlalchemy import inspect
-        
+
         db = next(get_db())
         try:
             # Проверяем наличие новых полей
             inspector = inspect(db.bind)
             columns = [col['name'] for col in inspector.get_columns('raffles')]
-            
+
             required_fields = ['channel_messages', 'winners_selected', 'completed_at']
             missing_fields = [field for field in required_fields if field not in columns]
-            
+
             if missing_fields:
                 print("\n⚠️  ВНИМАНИЕ: В базе данных отсутствуют новые поля:")
                 for field in missing_fields:
@@ -61,7 +61,7 @@ def check_migrations():
                 print("\n   Или вручную:")
                 print("   python migrations/add_new_fields.py")
                 return False
-            
+
             return True
         finally:
             db.close()
@@ -154,13 +154,13 @@ def main():
     
     # Проверяем наличие BOT_TOKEN
     bot_token = os.getenv('BOT_TOKEN')
-    if not bot_token or bot_token == 'your_bot_token_here':
+    if not bot_token or (bot_token == 'your_bot_token_here'):
         print("⚠️  ВНИМАНИЕ: BOT_TOKEN не настроен или имеет значение по умолчанию")
-        print("   Установите правильный токен в файле .env")
+        print("    Установите правильный токен в файле .env")
         response = input("\n   Продолжить запуск? (y/n): ")
         if response.lower() != 'y':
             sys.exit(1)
-    
+
     # Проверяем миграции
     if not check_migrations():
         response = input("\n   Продолжить запуск без миграций? (y/n): ")
@@ -168,7 +168,7 @@ def main():
             print("\n💡 Примените миграции и запустите снова:")
             print("   python apply_migration.py")
             sys.exit(1)
-    
+
     print("\n✅ Проверка конфигурации пройдена")
     print("\n📋 Компоненты для запуска:")
     print("   1. Telegram бот (основной компонент - текстовый интерфейс)")
@@ -198,11 +198,11 @@ def main():
         # Запускаем бота в отдельном потоке
         bot_thread = threading.Thread(target=run_bot, daemon=True)
         bot_thread.start()
-        
+
         # Небольшая задержка для инициализации бота
         print("⏳ Ожидание инициализации бота...")
         time.sleep(3)
-        
+
         print("\n" + "=" * 70)
         print("🌐 Запуск веб-сервера мини-приложения...")
         print("📡 Сервер будет доступен по адресу: http://localhost:8000")
@@ -211,7 +211,7 @@ def main():
         print("   2. В отдельном терминале выполните: ngrok http 8000")
         print("   3. Скопируйте HTTPS URL и обновите WEBAPP_URL в .env")
         print("=" * 70 + "\n")
-        
+
         try:
             # Запускаем веб-сервер в основном потоке
             run_web_server()

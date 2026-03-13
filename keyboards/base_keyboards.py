@@ -4,8 +4,6 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-
-
 def get_start_keyboard():
     keyboard = [
         [InlineKeyboardButton("➕ Добавить канал", callback_data="add_channel")]
@@ -74,9 +72,6 @@ def get_bot_menu_draw_3():
         ["❌Отменить создание"]
     ]
     return ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
-
-
-
 
 def get_bot_menu_draw_1():
     keyboard = [

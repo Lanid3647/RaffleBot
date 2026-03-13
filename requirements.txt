@@ -5,9 +5,9 @@ python-dotenv==1.2.1 #библиотека для того чтобы файл �
 psycopg2-binary==2.9.11  # Драйвер для Postgre
 
 python-telegram-bot==22.5 # библиотека python-telegram-bot
+vk-api==11.10.0 # библиотека vk_api
 fastapi==0.122.0 # фреймворк для мини приложения
 
 uvicorn==0.38.0
 python-multipart==0.0.20
 jinja2==3.1.6
-

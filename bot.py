@@ -1,6 +1,39 @@
+# system 
 import os
 import sys
 import logging
+from dotenv import load_dotenv
+from datetime import datetime
+import json
+# telegram
+from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, filters, CallbackQueryHandler, ConversationHandler, ContextTypes
+from telegram import Update, Message
+# В начале файла добавьте импорт:
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup, WebAppInfo, KeyboardButton, ReplyKeyboardMarkup
+# локалньая библиотека обработчика событий
+from handlers.start import start_command
+from handlers.handlers_message import cancel
+from handlers.handlers_message import handle_message
+from handlers.handlers_keyboards import STEP_2, STEP_3, STEP_4, STEP_9, STEP_5, STEP_6, STEP_7, STEP_8, STEP_10, STEP_1, STEP_11, RaffleCreator, new_version, add_channel_command
+from handlers.channel_handlers_keyboards import (my_channels, STEP_CHANNEL_1, tg_channels, back_channel, MAIN_STATE)
+from handlers.my_raffles_keyboard import my_raffles_start, handle_raffle_selection, STEP_RAFFLES_1, STEP_RAFFLES_2, handle_raffle_actions, handle_edit_choice, handle_edit_input, STEP_EDIT_1, STEP_EDIT_2, STEP_DELETE_CONFIRM
+from handlers.admin_panel import get_admin_handler
+#handle_webapp_callback
+#from miniapp.handle_webapp.start import start_command
+#from miniapp.handle_webapp.handler import handle_webapp_data
+# Запускаем планировщик для автоматического завершения розыгрышей в отдельном потоке
+import threading
+import asyncio
+from services.raffle_scheduler import start_scheduler
+
+# библиотеки-модули
+import keyboards.keyboards_vk as keyText
+
+# библиотека работы асинронно с vk api
+from vkbottle.bot import Bot, Message
+from vkbottle import Keyboard, Text, KeyboardButtonColor, \
+    OpenLink, Location, EMPTY_KEYBOARD, \
+    template_gen, TemplateElement
 
 # Настройка кодировки UTF-8 для консоли Windows
 if sys.platform == 'win32':
@@ -21,49 +54,29 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, filters, CallbackQueryHandler, ConversationHandler
-from dotenv import load_dotenv
-from handlers.start import start_command
-from handlers.handlers_message import cancel
-from handlers.handlers_message import handle_message
-from handlers.handlers_keyboards import STEP_2, STEP_3, STEP_4, STEP_9, STEP_5, STEP_6, STEP_7, STEP_8, STEP_10, STEP_1, STEP_11, RaffleCreator, new_version, add_channel_command
-#handle_webapp_callback
-from telegram.ext import ContextTypes, ConversationHandler
-from telegram import Update
-from datetime import datetime
-from handlers.channel_handlers_keyboards import (my_channels, STEP_CHANNEL_1, tg_channels, back_channel, MAIN_STATE)
-from handlers.my_raffles_keyboard import my_raffles_start, handle_raffle_selection, STEP_RAFFLES_1, STEP_RAFFLES_2, handle_raffle_actions, handle_edit_choice, handle_edit_input, STEP_EDIT_1, STEP_EDIT_2, STEP_DELETE_CONFIRM
-from handlers.admin_panel import get_admin_handler
-#from miniapp.handle_webapp.start import start_command
-#from miniapp.handle_webapp.handler import handle_webapp_data
-from telegram.ext import CallbackQueryHandler
-from telegram.ext import ApplicationBuilder
-
 load_dotenv()
-
-# В начале файла добавьте импорт:
-from telegram import InlineKeyboardButton, InlineKeyboardMarkup, WebAppInfo, KeyboardButton, ReplyKeyboardMarkup
-import json
 
 def bot():
     logger.info("Запуск функции bot()")
     # Проверяем наличие токена
-    bot_token = os.getenv('BOT_TOKEN')
-    if not bot_token:
+    bot_token_tg = os.getenv('BOT_TOKEN') # натройка токена под платформы вк и тг
+    
+    if not bot_token_tg:
         error_msg = "ОШИБКА: BOT_TOKEN не найден в переменных окружения!"
         logger.error(error_msg)
         print(error_msg)
-        print("Создайте файл .env в корне проекта и добавьте строку:")
+        print("Создайте файл .env в корне проекта и добавьте строки:")
         print("BOT_TOKEN=ваш_токен_бота")
         return
     
-    logger.info(f"Токен бота загружен (длина: {len(bot_token)} символов)")
-    print(f"Токен бота загружен (длина: {len(bot_token)} символов)")
-    
+    logger.info(f"Токен бота загружен (длина: {len(bot_token_tg)} символов)")
+    print(f"Токен бота загружен (длина: {len(bot_token_tg)} символов)")
     try:
         # Создаем приложение
         logger.info("Создание приложения бота...")
-        application = ApplicationBuilder().token(bot_token).build()
+        
+        application = ApplicationBuilder().token(bot_token_tg).build() # тг, настроить для разделения и вызова от тг и вк
+        
         logger.info("Приложение бота создано успешно")
         print("✅ Приложение бота создано успешно")
     except Exception as e:
@@ -76,18 +89,22 @@ def bot():
 
     logger.info("Регистрация обработчиков команд...")
     print("Регистрация обработчиков команд...")
-    
+
     # Добавляем универсальный обработчик для отладки всех команд
     async def debug_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         logger.debug(f"Получена команда: {update.message.text if update.message else 'N/A'}")
         logger.debug(f"Пользователь: {update.effective_user.id if update.effective_user else 'N/A'}")
-    
+
+   
     # Регистрируем обработчики команд с высоким приоритетом
     try:
-        application.add_handler(CommandHandler("start", start_command), group=1)
+        application.add_handler(CommandHandler("start", start_command), group=1) # тг
+        
         logger.info("Обработчик /start зарегистрирован (group=1)")
         print("✅ Обработчик /start зарегистрирован (group=1)")
-        application.add_handler(CommandHandler("cancel", cancel), group=1)
+        
+        application.add_handler(CommandHandler("cancel", cancel), group=1) # тг
+        
         logger.info("Обработчик /cancel зарегистрирован (group=1)")
         print("✅ Обработчик /cancel зарегистрирован (group=1)")
     except Exception as e:
@@ -102,19 +119,18 @@ def bot():
         logger.warning(f"Неизвестная команда: {command}")
         # Выводим сообщение только для реальных команд, которые не обработаны
         # Это нормально, так как пользователь явно отправил команду
+        
         await update.message.reply_text(
             "❓ Неизвестная команда. Используйте кнопки меню.",
             parse_mode='HTML'
         )
-    
-    application.add_handler(MessageHandler(filters.COMMAND, unknown_command), group=1)
 
-#    app.add_handler(CallbackQueryHandler(handle_webapp_callback, pattern=r"^open_webapp:"))
+    application.add_handler(MessageHandler(filters.COMMAND, unknown_command), group=1) # тг
 
-
+#   app.add_handler(CallbackQueryHandler(handle_webapp_callback, pattern=r"^open_webapp:"))
 
     raffle_creator = RaffleCreator()
-    
+
     # Обработчик для кнопки "Создать розыгрыш" из дашборда
     async def handle_create_raffle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         """Обрабатывает нажатие на кнопку 'Создать розыгрыш' из дашборда"""
@@ -127,7 +143,7 @@ def bot():
         
         # Создаем новое сообщение на основе оригинального, но с измененным текстом
         # Используем метод copy или создаем новое с теми же параметрами
-        from telegram import Message
+        
         
         # Создаем сообщение с правильной связью с ботом
         # Используем bot из original_message, если он есть, иначе из context
@@ -282,7 +298,7 @@ def bot():
         await query.answer()
         # Создаем фиктивное сообщение для запуска создания розыгрыша
         # Имитируем текстовое сообщение "Создать розыгрыш 🎁"
-        from telegram import Message
+        
         fake_message = Message(
             message_id=query.message.message_id,
             date=query.message.date,
@@ -304,11 +320,6 @@ def bot():
     logger.info("Бот запущен и готов к работе!")
     print("Бот запущен и готов к работе!")
     print("Ожидание сообщений...")
-    
-    # Запускаем планировщик для автоматического завершения розыгрышей в отдельном потоке
-    import threading
-    import asyncio
-    from services.raffle_scheduler import start_scheduler
     
     def run_scheduler():
         """Запускает планировщик в отдельном event loop"""
@@ -382,7 +393,7 @@ def bot():
             # Пересоздаем приложение
             try:
                 print("🔄 Пересоздание приложения...")
-                application = ApplicationBuilder().token(bot_token).build()
+                application = ApplicationBuilder().token(bot_token_tg).build()
                 # Нужно перерегистрировать обработчики - для этого лучше перезапустить функцию bot()
                 print("⚠️ Требуется полный перезапуск. Завершаем текущий процесс...")
                 break
@@ -390,5 +401,88 @@ def bot():
                 print(f"❌ Ошибка при пересоздании приложения: {recreate_error}")
                 break
 
+
+# Настройка кодировки UTF-8 для консоли Windows
+if sys.platform == 'win32':
+    try:
+        sys.stdout.reconfigure(encoding='utf-8')
+        sys.stderr.reconfigure(encoding='utf-8')
+    except:
+        pass
+
+# Настройка логирования
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.StreamHandler(sys.stdout),
+        logging.FileHandler('bot.log', encoding='utf-8')
+    ]
+)
+logger = logging.getLogger(__name__)
+logging.getLogger("vkbottle").setLevel(logging.INFO)
+load_dotenv()
+
+
+async def vk_bot():
+    logger.info("Запуск функции bot()")
+    vk_token = os.getenv('VK_KEY_BOT')
+
+    if not vk_token:
+        error_msg = "ОШИБКА: VK_KEY_BOT не найден в переменных окружения!"
+        logger.error(error_msg)
+        print(error_msg)
+        print("ОШИБКА ВВОДА ТОКЕНА (ОТСУТСТВУЕТ)")
+        print("\nSHOW TOKEN ENTITY: ")
+        return vk_token
+
+    logger.info(f"ТОКЕН ПОЛУЧЕН (длина: {len(vk_token)} символов)")
+    print(f"ТОКЕН ЗАГРУЖЕН (длина: {len(vk_token)} символов)")
+
+    # проверка и перехват ошибок при получении команды и
+    # сами меню с вызовом команд
+    try:
+        logger.info("Создание приложения бота...")
+        bot = Bot(token=vk_token)
+        logger.info("Приложение бота создано успешно")
+        print("✅ Приложение бота создано успешно")
+
+    except Exception as e:
+        error_msg = f"Ошибка при создании приложения бота: {e}"
+        logger.error(error_msg, exc_info=True)
+        print(error_msg)
+        import traceback
+        traceback.print_exc()
+
+    #
+    @bot.on.private_message()
+    # @bot.on.private_message(text="меню")
+    async def handle_message(message: Message):
+        if message.text == "Начать":
+            fixed_menu = keyText.menu_handler.extend(keyText.message_menu_handler)
+            user = await bot.api.users.get(user_ids=f'{message.from_id}')
+            await message.answer(keyText.info_user(user[0].id, user[0].first_name, user[0].last_name, 0, 0, 0),
+                                 keyboard=fixed_menu)
+        elif message.text == "О боте ℹ️":
+            await message.answer(keyText.info_about, keyboard=keyText.menu_handler)
+        elif message.text == "✨ Расширенная версия бота✨":
+            await message.answer(keyText.premium_version, keyboard=keyText.menu_handler)
+        elif message.text == "Техническая поддержка ⁉️":
+            await message.answer(keyText.info_help, keyboard=keyText.menu_handler)
+        else:
+            # Добавляем обработчик для всех остальных команд для отладки
+            # Этот обработчик срабатывает только для неизвестных команд
+            # и только если они не обработаны другими обработчиками команд
+            logger.warning(f"Неизвестная команда: {message.text}")
+            # Выводим сообщение только для реальных команд, которые не обработаны
+            # Это нормально, так как пользователь явно отправил команду
+            await message.answer(
+                "❓ Неизвестная команда. Используйте кнопки меню.",
+                parse_mode='HTML'
+            )
+
+    # бесконечная работа бота
+    await asyncio.gather(bot.run_forever())
+
 if __name__ == "__main__":
-    bot()
+    asyncio.gather(bot(),vk_bot())

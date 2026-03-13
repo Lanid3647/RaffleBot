@@ -1,19 +1,19 @@
 import sys
 import os
 from pathlib import Path
+from telegram import Update
+from telegram.ext import ContextTypes
+from keyboards.base_keyboards import get_start_keyboard, get_bot_menu, get_admin_keyboard, get_webapp_button, get_dashboard_keyboard
+from database.db_session import get_db
+from database.models import BotUser, Channel_tg, Raffle, ReferralLink
+from datetime import datetime
 
 # Добавляем корневую директорию проекта в sys.path
 project_root = Path(__file__).parent.parent
 if str(project_root) not in sys.path:
     sys.path.insert(0, str(project_root))
 
-from telegram import Update
-from telegram.ext import ContextTypes
-from keyboards.base_keyboards import get_start_keyboard, get_bot_menu, get_admin_keyboard, get_webapp_button, get_dashboard_keyboard
 
-from database.db_session import get_db
-from database.models import BotUser, Channel_tg, Raffle, ReferralLink
-from datetime import datetime
 
 
 async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
